@@ -51,3 +51,4 @@ make install               # copies to ~/.local/bin
 On distros that still ship `webkit2gtk-4.0`, run `make build TAGS=`.
 
 If the window is blank under WSLg or with some GPU drivers, try `WEBKIT_DISABLE_DMABUF_RENDERER=1 katdown file.md`.
+# katdown
