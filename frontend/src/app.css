@@ -1,0 +1,8 @@
+/* Shell basics only; document styling comes from the default or user CSS. */
+html, body {
+    margin: 0;
+    padding: 0;
+}
+#content:focus {
+    outline: none;
+}
