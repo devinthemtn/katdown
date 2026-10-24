@@ -1,5 +1,6 @@
 // Vim-style navigation.
 import {Quit} from '../wailsjs/go/main/App';
+import * as help from './help';
 import * as search from './search';
 
 const LINE = 60;
@@ -15,6 +16,13 @@ export function initKeys({openFile, reload}) {
     window.addEventListener('keydown', (e) => {
         if (search.isOpen()) return; // the search input handles its own keys
         if (e.isComposing) return;
+
+        // While help is up, only the keys that close it do anything.
+        if (help.isOpen()) {
+            if (e.key === '?' || e.key === 'Escape' || e.key === 'q') help.close();
+            e.preventDefault();
+            return;
+        }
 
         const ctrl = e.ctrlKey && !e.altKey && !e.metaKey;
         if (ctrl) {
@@ -56,6 +64,7 @@ export function initKeys({openFile, reload}) {
                 break;
             }
             case '/': search.open(); break;
+            case '?': help.open(); break;
             case 'n': search.next(1); break;
             case 'N': search.next(-1); break;
             case 'Escape': search.clear(); break;

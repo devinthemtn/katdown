@@ -6,3 +6,79 @@ html, body {
 #content:focus {
     outline: none;
 }
+
+/*
+ * `?` help overlay. Selectors are wrapped in :where() (zero specificity) so a
+ * custom style.css can restyle #katdown-help; colors use its palette variables.
+ */
+:where(#katdown-help) {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(5, 7, 10, 0.6);
+    backdrop-filter: blur(3px);
+}
+:where(#katdown-help[hidden]) {
+    display: none;
+}
+:where(#katdown-help .panel) {
+    min-width: 20rem;
+    max-height: 100%;
+    overflow-y: auto;
+    padding: 1.4rem 1.75rem 1.1rem;
+    font-family: var(--font-body, sans-serif);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--fg, #c9d1dc);
+    border: 1px solid var(--border-strong, #323b4a);
+    border-radius: 10px;
+    background: var(--surface, #141922);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+:where(#katdown-help h2) {
+    margin: 0;
+    font-size: 1.15em;
+    color: var(--fg-strong, #eef2f7);
+}
+:where(#katdown-help th) {
+    padding: 1rem 0 0.35rem;
+    text-align: left;
+    font-size: 0.75em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent, #7aa2f7);
+}
+:where(#katdown-help table) {
+    border-collapse: collapse;
+}
+:where(#katdown-help td) {
+    padding: 0.2rem 0;
+    vertical-align: middle;
+}
+:where(#katdown-help td:first-child) {
+    padding-right: 1.5rem;
+    white-space: nowrap;
+}
+:where(#katdown-help kbd) {
+    display: inline-block;
+    min-width: 1.1em;
+    padding: 0.05em 0.45em;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.9em;
+    text-align: center;
+    color: var(--fg-strong, #eef2f7);
+    border: 1px solid var(--border-strong, #323b4a);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: var(--surface-2, #1a202b);
+}
+:where(#katdown-help .hint) {
+    margin: 1rem 0 0;
+    font-size: 0.85em;
+    color: var(--muted, #7d8899);
+}

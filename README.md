@@ -18,7 +18,7 @@ The default look is a dark theme using the bundled Inter and JetBrains Mono font
 
 If `style.css` exists in the config folder, it **replaces** the built-in style. Run `-makeconfig` to get a full copy of the default to edit; delete the file to go back to the default. The palette is a set of CSS variables at the top of the file (Mermaid diagrams use them too), and a light palette is included there, commented out.
 
-Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar).
+Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-help` (the `?` overlay).
 
 ## Keys
 
@@ -33,6 +33,7 @@ Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token cla
 | `Esc` | clear search |
 | `Ctrl-o` | open another file |
 | `Ctrl-r` | reload |
+| `?` | show / hide key help |
 | `q` | quit |
 
 Links: web links open in the system browser, relative `.md` links open in katdown.

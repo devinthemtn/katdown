@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -170,9 +171,41 @@ func (a *App) OpenRelative(href string) error {
 	return nil
 }
 
-// OpenExternal opens a URL in the system browser.
+// OpenExternal opens a URL in the system browser. Under WSL there is usually
+// no xdg-open, so the URL is handed to Windows to open in its default browser.
 func (a *App) OpenExternal(u string) {
+	if isWSL() {
+		if err := openWindows(u); err == nil {
+			return
+		} else {
+			log.Printf("katdown: opening %s via Windows: %v", u, err)
+		}
+	}
 	runtime.BrowserOpenURL(a.ctx, u)
+}
+
+func isWSL() bool {
+	if os.Getenv("WSL_DISTRO_NAME") != "" {
+		return true
+	}
+	b, err := os.ReadFile("/proc/sys/kernel/osrelease")
+	return err == nil && strings.Contains(strings.ToLower(string(b)), "microsoft")
+}
+
+// openWindows prefers wslview (wslu) and falls back to explorer.exe, which
+// opens a URL in the Windows default browser.
+func openWindows(u string) error {
+	name := "wslview"
+	if _, err := exec.LookPath(name); err != nil {
+		name = "explorer.exe"
+	}
+	cmd := exec.Command(name, u)
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	// explorer.exe exits non-zero even on success, so only reap the process.
+	go cmd.Wait()
+	return nil
 }
 
 // Quit closes the app.
