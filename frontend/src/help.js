@@ -7,6 +7,10 @@ const KEYS = [
         [['Space', 'b'], 'page down / up'],
         [['gg', 'G'], 'top / bottom'],
     ]],
+    ['Headings', [
+        [['t'], 'table of contents'],
+        [[']]', '[['], 'next / previous heading'],
+    ]],
     ['Search', [
         [['/'], 'search (Enter runs, Esc cancels)'],
         [['n', 'N'], 'next / previous match'],

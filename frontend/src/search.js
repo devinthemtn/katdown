@@ -156,7 +156,7 @@ function mark(query) {
     const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
         acceptNode(node) {
             const el = node.parentElement;
-            if (!el || el.closest('pre.mermaid, svg, script, style')) return NodeFilter.FILTER_REJECT;
+            if (!el || el.closest('pre.mermaid, .math, svg, script, style')) return NodeFilter.FILTER_REJECT;
             return node.data ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
         },
     });

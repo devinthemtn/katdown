@@ -2,8 +2,6 @@
 // when a document actually contains a diagram. Its colors come from the
 // stylesheet's CSS variables so diagrams match the page (and user CSS).
 
-const scheme = window.matchMedia('(prefers-color-scheme: dark)');
-
 let mermaidPromise;
 let lastRoot;
 let idCounter = 0;
@@ -94,7 +92,7 @@ export async function renderDiagrams(root) {
     }
 }
 
-// A stylesheet that follows the OS theme changes its variables; redraw to match.
-scheme.addEventListener('change', () => {
+/** Redraws the last diagrams, e.g. after the theme's colors changed. */
+export function redrawDiagrams() {
     if (mermaidPromise && lastRoot) renderDiagrams(lastRoot);
-});
+}

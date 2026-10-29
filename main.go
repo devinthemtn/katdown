@@ -4,6 +4,7 @@ import (
 	"embed"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,26 +20,26 @@ import (
 var assets embed.FS
 
 func main() {
-	makeConfig := flag.Bool("makeconfig", false, "create the katdown config folder with the default style.css, then exit")
+	makeConfig := flag.Bool("makeconfig", false, "create config.toml with the default settings, then exit")
+	makeStyle := flag.Bool("makestyle", false, "create style.css with the default stylesheet, then exit")
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-makeconfig] [file.md]\n\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-makeconfig] [-makestyle] [file.md]\n\n")
 		flag.PrintDefaults()
+		if p, err := config.SettingsPath(); err == nil {
+			fmt.Fprintf(flag.CommandLine.Output(), "\nSettings:          %s\n", p)
+		}
 		if p, err := config.CSSPath(); err == nil {
-			fmt.Fprintf(flag.CommandLine.Output(), "\nCustom stylesheet: %s\n", p)
+			fmt.Fprintf(flag.CommandLine.Output(), "Custom stylesheet: %s\n", p)
 		}
 	}
 	flag.Parse()
 
-	if *makeConfig {
-		path, created, err := config.MakeConfig()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "katdown:", err)
-			os.Exit(1)
+	if *makeConfig || *makeStyle {
+		if *makeConfig {
+			writeConfigFile(config.MakeSettings)
 		}
-		if created {
-			fmt.Println("Wrote", path)
-		} else {
-			fmt.Println(path, "already exists, left untouched")
+		if *makeStyle {
+			writeConfigFile(config.MakeStyle)
 		}
 		return
 	}
@@ -60,16 +61,29 @@ func main() {
 		path = abs
 	}
 
+	// First run: write the default config.toml so there is a file to edit.
+	// MakeSettings never overwrites, and a read-only config folder just means
+	// the defaults are used.
+	if _, _, err := config.MakeSettings(); err != nil {
+		log.Printf("katdown: creating settings file: %v", err)
+	}
+	// Problems with the file are shown in the window once it opens.
+	settings, _ := config.LoadSettings()
+	bg := &options.RGBA{R: 13, G: 16, B: 23, A: 255}
+	if settings.Theme == "light" {
+		bg = &options.RGBA{R: 251, G: 251, B: 250, A: 255}
+	}
+
 	app := NewApp(path)
 	err := wails.Run(&options.App{
 		Title:  "katdown",
-		Width:  960,
-		Height: 900,
+		Width:  settings.Window.Width,
+		Height: settings.Window.Height,
 		AssetServer: &assetserver.Options{
 			Assets:  assets,
 			Handler: http.HandlerFunc(app.localFiles),
 		},
-		BackgroundColour: &options.RGBA{R: 13, G: 16, B: 23, A: 255},
+		BackgroundColour: bg,
 		OnStartup:        app.startup,
 		OnDomReady:       app.domReady,
 		OnShutdown:       app.shutdown,
@@ -78,5 +92,19 @@ func main() {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
+	}
+}
+
+// writeConfigFile runs one of the config.Make* functions and reports the result.
+func writeConfigFile(write func() (string, bool, error)) {
+	path, created, err := write()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "katdown:", err)
+		os.Exit(1)
+	}
+	if created {
+		fmt.Println("Wrote", path)
+	} else {
+		fmt.Println(path, "already exists, left untouched")
 	}
 }

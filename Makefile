@@ -4,7 +4,7 @@ TAGS ?= webkit2_41
 # Windows install dir, resolved through WSL interop (empty outside WSL).
 WIN_INSTALL_DIR ?= $(shell command -v wslpath >/dev/null && wslpath "$$(cmd.exe /c echo %LOCALAPPDATA% 2>/dev/null | tr -d '\r')" 2>/dev/null)/Programs/katdown
 
-.PHONY: build build-windows installer-windows dev test generate install install-windows
+.PHONY: build build-windows installer-windows dev test install install-windows
 
 build:
 	wails build -tags $(TAGS)
@@ -22,10 +22,6 @@ dev:
 
 test:
 	go test ./internal/...
-
-# Regenerates internal/config/chroma.css (syntax-highlighting colors).
-generate:
-	go generate ./internal/config
 
 install: build
 	install -Dm755 build/bin/katdown $(HOME)/.local/bin/katdown

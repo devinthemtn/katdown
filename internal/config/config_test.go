@@ -13,15 +13,15 @@ func useTempConfig(t *testing.T) string {
 	return filepath.Join(dir, AppName, StyleFile)
 }
 
-func TestMakeConfig(t *testing.T) {
+func TestMakeStyle(t *testing.T) {
 	want := useTempConfig(t)
 
-	path, created, err := MakeConfig()
+	path, created, err := MakeStyle()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if path != want || !created {
-		t.Fatalf("MakeConfig() = %q, %v; want %q, true", path, created, want)
+		t.Fatalf("MakeStyle() = %q, %v; want %q, true", path, created, want)
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -32,7 +32,7 @@ func TestMakeConfig(t *testing.T) {
 	}
 }
 
-func TestMakeConfigKeepsExisting(t *testing.T) {
+func TestMakeStyleKeepsExisting(t *testing.T) {
 	path := useTempConfig(t)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
@@ -41,12 +41,12 @@ func TestMakeConfigKeepsExisting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, created, err := MakeConfig()
+	_, created, err := MakeStyle()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if created {
-		t.Error("MakeConfig reported creating a file that already existed")
+		t.Error("MakeStyle reported creating a file that already existed")
 	}
 	if data, _ := os.ReadFile(path); string(data) != "body{}" {
 		t.Errorf("existing style.css was overwritten: %q", data)

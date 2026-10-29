@@ -2,16 +2,27 @@
 import {Quit} from '../wailsjs/go/main/App';
 import * as help from './help';
 import * as search from './search';
+import * as toc from './toc';
 
 const LINE = 60;
 const GG_TIMEOUT = 500;
+const SEQUENCE_KEYS = ['g', '[', ']'];
 
 const scrollBy = (dy) => window.scrollBy({top: dy, behavior: 'instant'});
 const page = () => window.innerHeight - 2 * LINE;
 const half = () => window.innerHeight / 2;
 
 export function initKeys({openFile, reload}) {
-    let lastG = 0;
+    // Two-key sequences (gg, ]], [[): true on the second press of `key`.
+    let pending = '';
+    let pendingAt = 0;
+    const repeated = (key) => {
+        const now = Date.now();
+        const hit = pending === key && now - pendingAt < GG_TIMEOUT;
+        pending = hit ? '' : key;
+        pendingAt = now;
+        return hit;
+    };
 
     window.addEventListener('keydown', (e) => {
         if (search.isOpen()) return; // the search input handles its own keys
@@ -21,6 +32,10 @@ export function initKeys({openFile, reload}) {
         if (help.isOpen()) {
             if (e.key === '?' || e.key === 'Escape' || e.key === 'q') help.close();
             e.preventDefault();
+            return;
+        }
+        if (toc.isOpen()) {
+            toc.onKey(e);
             return;
         }
 
@@ -43,7 +58,7 @@ export function initKeys({openFile, reload}) {
         }
         if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-        if (e.key !== 'g') lastG = 0;
+        if (!SEQUENCE_KEYS.includes(e.key)) pending = '';
         switch (e.key) {
             case 'j': scrollBy(LINE); break;
             case 'k': scrollBy(-LINE); break;
@@ -53,16 +68,10 @@ export function initKeys({openFile, reload}) {
             case 'f': scrollBy(e.shiftKey ? -page() : page()); break;
             case 'b': scrollBy(-page()); break;
             case 'G': window.scrollTo({top: document.body.scrollHeight, behavior: 'instant'}); break;
-            case 'g': {
-                const now = Date.now();
-                if (now - lastG < GG_TIMEOUT) {
-                    window.scrollTo({top: 0, behavior: 'instant'});
-                    lastG = 0;
-                } else {
-                    lastG = now;
-                }
-                break;
-            }
+            case 'g': if (repeated('g')) window.scrollTo({top: 0, behavior: 'instant'}); break;
+            case ']': if (repeated(']')) toc.jump(1); break;
+            case '[': if (repeated('[')) toc.jump(-1); break;
+            case 't': toc.open(); break;
             case '/': search.open(); break;
             case '?': help.open(); break;
             case 'n': search.next(1); break;

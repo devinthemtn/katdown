@@ -3,6 +3,7 @@ package render
 
 import (
 	"bytes"
+	"regexp"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/yuin/goldmark"
@@ -18,6 +19,8 @@ var md = goldmark.New(
 	goldmark.WithExtensions(
 		extension.GFM,
 		extension.Footnote,
+		math{},
+		highlight{},
 		// Mermaid's transformer claims ```mermaid fences before highlighting
 		// sees them; the frontend draws the diagrams, which ship with the app.
 		&mermaid.Extender{RenderMode: mermaid.RenderModeClient, NoScript: true},
@@ -28,10 +31,13 @@ var md = goldmark.New(
 	goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 )
 
-// Render returns src rendered as an HTML fragment.
-func Render(src []byte) (string, error) {
+// Render returns src rendered as an HTML fragment. Text matching any of the
+// highlight patterns is wrapped in <span class="katdown-highlight">.
+func Render(src []byte, highlights []*regexp.Regexp) (string, error) {
+	pc := parser.NewContext()
+	pc.Set(highlightKey, highlights)
 	var buf bytes.Buffer
-	if err := md.Convert(src, &buf); err != nil {
+	if err := md.Convert(src, &buf, parser.WithContext(pc)); err != nil {
 		return "", err
 	}
 	return buf.String(), nil

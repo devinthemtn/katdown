@@ -39,12 +39,23 @@ type App struct {
 
 // Document is everything the frontend needs to display the current file.
 type Document struct {
-	Path      string `json:"path"`
-	Name      string `json:"name"`
-	HTML      string `json:"html"`
-	CSS       string `json:"css"`
-	CustomCSS bool   `json:"customCss"`
-	Error     string `json:"error"`
+	Path      string  `json:"path"`
+	Name      string  `json:"name"`
+	HTML      string  `json:"html"`
+	CSS       string  `json:"css"`
+	CustomCSS bool    `json:"customCss"`
+	Theme     string  `json:"theme"` // dark, light or system
+	CodeCSS   CodeCSS `json:"codeCss"`
+	Error     string  `json:"error"`
+	// ConfigError describes a problem with config.toml; defaults were used
+	// for the affected settings.
+	ConfigError string `json:"configError"`
+}
+
+// CodeCSS is the syntax-highlighting stylesheet for each theme.
+type CodeCSS struct {
+	Dark  string `json:"dark"`
+	Light string `json:"light"`
 }
 
 func NewApp(path string) *App {
@@ -108,10 +119,22 @@ func (a *App) currentPath() string {
 	return a.path
 }
 
-// GetDocument reads and renders the current file with the active stylesheet.
+// GetDocument reads and renders the current file with the current settings
+// and stylesheet. Both are re-read every time, so a reload picks up edits.
 func (a *App) GetDocument() Document {
+	settings, err := config.LoadSettings()
 	css, custom := config.LoadCSS()
-	doc := Document{CSS: css, CustomCSS: custom}
+	dark, light := settings.CodeCSS()
+	doc := Document{
+		// The settings' variables come last so they apply to a custom style.css too.
+		CSS:       css + "\n" + settings.CSSVars(),
+		CustomCSS: custom,
+		Theme:     settings.Theme,
+		CodeCSS:   CodeCSS{Dark: dark, Light: light},
+	}
+	if err != nil {
+		doc.ConfigError = err.Error()
+	}
 
 	p := a.currentPath()
 	if p == "" {
@@ -124,7 +147,7 @@ func (a *App) GetDocument() Document {
 		doc.Error = err.Error()
 		return doc
 	}
-	html, err := render.Render(src)
+	html, err := render.Render(src, settings.HighlightPatterns())
 	if err != nil {
 		doc.Error = err.Error()
 		return doc

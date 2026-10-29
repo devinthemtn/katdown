@@ -8,10 +8,11 @@ html, body {
 }
 
 /*
- * `?` help overlay. Selectors are wrapped in :where() (zero specificity) so a
- * custom style.css can restyle #katdown-help; colors use its palette variables.
+ * `?` help and `t` contents overlays. Selectors are wrapped in :where() (zero
+ * specificity) so a custom style.css can restyle #katdown-help and
+ * #katdown-toc; colors use its palette variables.
  */
-:where(#katdown-help) {
+:where(#katdown-help, #katdown-toc) {
     position: fixed;
     inset: 0;
     z-index: 10;
@@ -22,10 +23,10 @@ html, body {
     background: rgba(5, 7, 10, 0.6);
     backdrop-filter: blur(3px);
 }
-:where(#katdown-help[hidden]) {
+:where(#katdown-help[hidden], #katdown-toc[hidden]) {
     display: none;
 }
-:where(#katdown-help .panel) {
+:where(#katdown-help, #katdown-toc) :where(.panel) {
     min-width: 20rem;
     max-height: 100%;
     overflow-y: auto;
@@ -39,7 +40,7 @@ html, body {
     background: var(--surface, #141922);
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
 }
-:where(#katdown-help h2) {
+:where(#katdown-help, #katdown-toc) :where(h2) {
     margin: 0;
     font-size: 1.15em;
     color: var(--fg-strong, #eef2f7);
@@ -77,8 +78,43 @@ html, body {
     border-radius: 5px;
     background: var(--surface-2, #1a202b);
 }
-:where(#katdown-help .hint) {
+:where(#katdown-help, #katdown-toc) :where(.hint) {
     margin: 1rem 0 0;
     font-size: 0.85em;
     color: var(--muted, #7d8899);
+}
+
+:where(#katdown-toc .panel) {
+    width: min(34rem, 100%);
+}
+:where(#katdown-toc ol) {
+    margin: 0.8rem -0.6rem 0;
+    padding: 0;
+    list-style: none;
+}
+:where(#katdown-toc li) {
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+:where(#katdown-toc li:hover) {
+    background: var(--surface-2, #1a202b);
+}
+:where(#katdown-toc li.level-1) {
+    font-weight: 600;
+    color: var(--fg-strong, #eef2f7);
+}
+:where(#katdown-toc li.level-2) { padding-left: 1.6rem; }
+:where(#katdown-toc li.level-3) { padding-left: 2.6rem; }
+:where(#katdown-toc li.level-4) { padding-left: 3.6rem; color: var(--muted, #7d8899); }
+:where(#katdown-toc li.empty) {
+    cursor: default;
+    color: var(--muted, #7d8899);
+}
+:where(#katdown-toc li.selected) {
+    color: var(--fg-strong, #eef2f7);
+    background: var(--accent-soft, rgba(122, 162, 247, 0.14));
 }

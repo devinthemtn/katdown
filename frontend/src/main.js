@@ -4,17 +4,38 @@ import './app.css';
 
 import {GetDocument, OpenExternal, OpenFile, OpenRelative} from '../wailsjs/go/main/App';
 import {EventsOn} from '../wailsjs/runtime/runtime';
-import {renderDiagrams} from './diagrams';
+import {redrawDiagrams, renderDiagrams} from './diagrams';
 import {initKeys} from './keys';
+import {renderMath} from './math';
 import * as search from './search';
 
 const style = document.getElementById('doc-style');
+const codeStyle = document.getElementById('code-style');
 const content = document.getElementById('content');
+const scheme = window.matchMedia('(prefers-color-scheme: dark)');
 
 let currentPath = '';
+let lastDoc;
+
+// Sets data-theme on <html> from the settings (system follows the OS) and
+// picks the matching code colors.
+function applyTheme(doc) {
+    const dark = doc.theme === 'system' ? scheme.matches : doc.theme !== 'light';
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    codeStyle.textContent = dark ? doc.codeCss.dark : doc.codeCss.light;
+}
+
+function errorBanner(text) {
+    const p = document.createElement('p');
+    p.className = 'katdown-error';
+    p.textContent = text;
+    return p;
+}
 
 async function load() {
     const doc = await GetDocument();
+    lastDoc = doc;
+    applyTheme(doc);
     style.textContent = doc.css;
 
     // Keep the reading position on live reload, start at the top for a new file.
@@ -24,15 +45,14 @@ async function load() {
 
     if (doc.error) {
         content.innerHTML = '';
-        const p = document.createElement('p');
-        p.className = 'katdown-error';
-        p.textContent = `Could not open ${doc.path}: ${doc.error}`;
-        content.append(p);
+        content.append(errorBanner(`Could not open ${doc.path}: ${doc.error}`));
     } else {
         content.innerHTML = doc.html;
     }
+    if (doc.configError) content.prepend(errorBanner(doc.configError));
 
     await renderDiagrams(content);
+    await renderMath(content);
     window.scrollTo(0, scroll);
     search.refresh(sameFile);
 }
@@ -58,6 +78,13 @@ content.addEventListener('click', (e) => {
 initKeys({
     openFile: () => OpenFile(),
     reload: load,
+});
+
+// With theme = "system", follow the OS as it switches.
+scheme.addEventListener('change', () => {
+    if (lastDoc?.theme !== 'system') return;
+    applyTheme(lastDoc);
+    redrawDiagrams();
 });
 
 EventsOn('doc:changed', load);

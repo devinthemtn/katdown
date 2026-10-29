@@ -2,14 +2,17 @@
  * katdown stylesheet.
  *
  * This is the built-in look. If this file lives in your katdown config
- * folder (created with `katdown -makeconfig`), it replaces the built-in
+ * folder (created with `katdown -makestyle`), it replaces the built-in
  * style completely, so edit freely. Delete it to go back to the default.
+ *
+ * Theme, fonts, text size, column width and code colors are set in
+ * config.toml (`katdown -makeconfig`), which applies on top of this file:
+ * it sets data-theme="dark|light" on <html>, the --font-body, --font-mono,
+ * --font-size and --content-width variables, and the chroma code colors.
  *
  * The document is rendered inside <article id="content" class="markdown-body">.
  * Mermaid diagrams take their colors from the variables below, so changing
  * the palette recolors diagrams too.
- *
- * Bundled fonts you can use: "Inter Variable", "JetBrains Mono Variable".
  */
 
 :root {
@@ -38,18 +41,21 @@
   --match-current-bg: #e0af68;
   --match-current-fg: #11141a;
 
+  --error: #f7768e;
+  /* Text matched by [highlight] patterns in config.toml. */
+  --highlight: #9ece6a;
+
   /* Mermaid reads this to pick its dark or light base palette. */
   --diagram-dark: true;
 
   --font-body: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-size: 16px;
+  --content-width: 46rem;
 }
 
-/*
- * Prefer a light page? Uncomment this block (or wrap it in
- * `@media (prefers-color-scheme: light) { ... }` to follow the OS).
- *
-:root {
+/* Light palette, used with theme = "light" (or "system" on a light OS). */
+:root[data-theme="light"] {
   color-scheme: light;
   --bg: #fbfbfa;
   --surface: #f3f4f6;
@@ -68,9 +74,10 @@
   --match-bg: #fde68a;
   --match-current-bg: #f59e0b;
   --match-current-fg: #111418;
+  --error: #c42a47;
+  --highlight: #2f7d32;
   --diagram-dark: false;
 }
- */
 
 html,
 body {
@@ -81,7 +88,7 @@ body {
 body {
   margin: 0;
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: var(--font-size);
   line-height: 1.7;
   font-feature-settings: "cv11", "ss01", "ss03";
   -webkit-font-smoothing: antialiased;
@@ -114,7 +121,7 @@ body {
 }
 
 .markdown-body {
-  max-width: 46rem;
+  max-width: var(--content-width);
   margin: 0 auto;
   padding: 3.5rem 2rem 6rem;
   overflow-wrap: break-word;
@@ -368,7 +375,7 @@ body {
 .markdown-body .mermaid-error {
   margin: -0.6em 0 1.15em;
   font-size: 0.85em;
-  color: #f7768e;
+  color: var(--error);
 }
 
 /* ---- Search (/) ---- */
@@ -397,7 +404,7 @@ mark.katdown-match.current {
   font-family: var(--font-mono);
   font-size: 13.5px;
   color: var(--fg-strong);
-  background: rgba(20, 25, 34, 0.94);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
   border-top: 1px solid var(--border-strong);
   backdrop-filter: blur(6px);
 }
@@ -423,11 +430,29 @@ mark.katdown-match.current {
   white-space: nowrap;
 }
 
+/* ---- Highlighted words ([highlight] in config.toml) ---- */
+.markdown-body .katdown-highlight {
+  padding: 0 0.15em;
+  color: var(--highlight);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--highlight) 13%, transparent);
+  font-weight: 550;
+}
+
+/* ---- Math (KaTeX) ---- */
+/* Wide formulas scroll instead of overflowing the column. */
+.markdown-body .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.2em 0;
+}
+
 /* ---- Errors ---- */
 .markdown-body .katdown-error {
   padding: 1em 1.2em;
-  color: #f7768e;
-  border: 1px solid rgba(247, 118, 142, 0.4);
+  color: var(--error);
+  border: 1px solid color-mix(in srgb, var(--error) 40%, transparent);
   border-radius: 8px;
-  background: rgba(247, 118, 142, 0.08);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+  white-space: pre-wrap;
 }

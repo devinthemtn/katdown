@@ -1,5 +1,5 @@
-// Package config locates katdown's config folder and resolves the stylesheet
-// used to display documents.
+// Package config locates katdown's config folder and resolves the settings
+// and stylesheet used to display documents.
 package config
 
 import (
@@ -10,23 +10,17 @@ import (
 	"path/filepath"
 )
 
-//go:generate go run ./chromagen chroma.css
-
 // AppName is used for the config folder name.
 const AppName = "katdown"
 
 // StyleFile is the name of the user's custom stylesheet inside Dir().
 const StyleFile = "style.css"
 
-var (
-	//go:embed default.css
-	baseCSS string
-	//go:embed chroma.css
-	chromaCSS string
-)
-
-// DefaultCSS is the built-in stylesheet, written out by MakeConfig.
-var DefaultCSS = baseCSS + "\n" + chromaCSS
+// DefaultCSS is the built-in stylesheet, written out by MakeStyle. Syntax
+// highlighting is not part of it; see Settings.CodeCSS.
+//
+//go:embed default.css
+var DefaultCSS string
 
 // Dir returns the katdown config folder, e.g. ~/.config/katdown on Linux.
 func Dir() (string, error) {
@@ -60,26 +54,43 @@ func LoadCSS() (css string, custom bool) {
 	return string(data), true
 }
 
-// MakeConfig creates the config folder and writes DefaultCSS to style.css.
+// MakeSettings creates the config folder and writes DefaultSettingsFile to
+// config.toml. An existing config.toml is left untouched and created is false.
+func MakeSettings() (path string, created bool, err error) {
+	path, err = SettingsPath()
+	if err != nil {
+		return "", false, err
+	}
+	created, err = writeNew(path, DefaultSettingsFile)
+	return path, created, err
+}
+
+// MakeStyle creates the config folder and writes DefaultCSS to style.css.
 // An existing style.css is left untouched and created is false.
-func MakeConfig() (path string, created bool, err error) {
+func MakeStyle() (path string, created bool, err error) {
 	path, err = CSSPath()
 	if err != nil {
 		return "", false, err
 	}
+	created, err = writeNew(path, DefaultCSS)
+	return path, created, err
+}
+
+// writeNew writes data to path unless the file already exists.
+func writeNew(path, data string) (created bool, err error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return path, false, err
+		return false, err
 	}
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if errors.Is(err, fs.ErrExist) {
-		return path, false, nil
+		return false, nil
 	}
 	if err != nil {
-		return path, false, err
+		return false, err
 	}
-	if _, err := f.WriteString(DefaultCSS); err != nil {
+	if _, err := f.WriteString(data); err != nil {
 		f.Close()
-		return path, false, err
+		return false, err
 	}
-	return path, true, f.Close()
+	return true, f.Close()
 }

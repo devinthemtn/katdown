@@ -1,0 +1,39 @@
+# katdown settings.
+#
+# Every setting is optional; anything left out uses the value shown here.
+# Press Ctrl-r in katdown to apply changes (window size needs a restart).
+
+# dark, light, or system (follows the OS setting).
+theme = "dark"
+
+[font]
+# Any installed font family. Bundled: "Inter Variable", "JetBrains Mono Variable".
+body = "Inter Variable"
+mono = "JetBrains Mono Variable"
+# Base text size in pixels.
+size = 16
+
+[layout]
+# Maximum width of the text column, e.g. "46rem", "800px", "90ch", "100%".
+width = "46rem"
+
+[code]
+# Syntax-highlighting styles for the dark and light themes. Any chroma style:
+# https://xyproto.github.io/splash/docs/
+dark = "tokyonight-night"
+light = "github"
+
+[window]
+# Initial window size in pixels.
+width = 960
+height = 900
+
+[highlight]
+# Text matching any of these regular expressions is highlighted. Go syntax:
+# https://github.com/google/re2/wiki/Syntax. Use '...' quotes so backslashes
+# are kept. The default marks anything in {curly braces}; [] turns it off.
+# Code, math and links' URLs are never highlighted; write \{x} to skip one.
+patterns = ['\{[^{}]+\}']
+# CSS color for highlighted text, e.g. "#e0af68" or "orange". Empty uses the
+# theme's color.
+color = ""
