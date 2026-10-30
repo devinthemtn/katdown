@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -13,6 +14,7 @@ import (
 	goruntime "runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -250,12 +252,30 @@ func (a *App) EditFile() error {
 	if err != nil {
 		return err
 	}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	go cmd.Wait()
+	// An editor that can't run (say, a terminal editor with no terminal)
+	// exits at once; report that rather than failing silently.
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+	select {
+	case err := <-done:
+		if err != nil {
+			if msg := strings.TrimSpace(stderr.String()); msg != "" {
+				return fmt.Errorf("%v: %s", err, msg)
+			}
+			return err
+		}
+	case <-time.After(editorGrace):
+	}
 	return nil
 }
+
+// editorGrace is how long EditFile waits to see whether the editor fails.
+const editorGrace = time.Second
 
 // Quit closes the app.
 func (a *App) Quit() {
