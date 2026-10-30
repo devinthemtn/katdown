@@ -66,6 +66,7 @@ Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token cla
 | `d` / `u`, `Ctrl-d` / `Ctrl-u` | half page down / up |
 | `Space` / `f` / `Ctrl-f`, `b` / `Ctrl-b` | page down / up |
 | `gg` / `G` | top / bottom |
+| `Ctrl-+` / `Ctrl--`, `Ctrl-0` | bigger / smaller text, reset (not saved) |
 | `/` | search (Enter to run, Esc to cancel); smartcase like vim |
 | `n` / `N` | next / previous match |
 | `Esc` | clear search |

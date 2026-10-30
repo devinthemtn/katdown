@@ -12,6 +12,16 @@ const scrollBy = (dy) => window.scrollBy({top: dy, behavior: 'instant'});
 const page = () => window.innerHeight - 2 * LINE;
 const half = () => window.innerHeight / 2;
 
+// Ctrl-+/-/0 zoom: scales the theme's --font-size for this session only.
+const ZOOM_STEP = 0.1;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 3;
+let zoom = 1;
+const setZoom = (z) => {
+    zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 10) / 10));
+    document.body.style.fontSize = zoom === 1 ? '' : `calc(var(--font-size) * ${zoom})`;
+};
+
 export function initKeys({openFile, reload, edit}) {
     // Two-key sequences (gg, ]], [[): true on the second press of `key`.
     let pending = '';
@@ -39,6 +49,7 @@ export function initKeys({openFile, reload, edit}) {
             return;
         }
 
+        // Shift is allowed so Ctrl-+ works on layouts where + needs it.
         const ctrl = e.ctrlKey && !e.altKey && !e.metaKey;
         if (ctrl) {
             const actions = {
@@ -48,6 +59,10 @@ export function initKeys({openFile, reload, edit}) {
                 b: () => scrollBy(-page()),
                 o: openFile,
                 r: reload,
+                '=': () => setZoom(zoom + ZOOM_STEP),
+                '+': () => setZoom(zoom + ZOOM_STEP),
+                '-': () => setZoom(zoom - ZOOM_STEP),
+                '0': () => setZoom(1),
             };
             const action = actions[e.key.toLowerCase()];
             if (action) {

@@ -7,6 +7,10 @@ const KEYS = [
         [['Space', 'b'], 'page down / up'],
         [['gg', 'G'], 'top / bottom'],
     ]],
+    ['View', [
+        [['Ctrl-+', 'Ctrl--'], 'bigger / smaller text'],
+        [['Ctrl-0'], 'reset text size'],
+    ]],
     ['Headings', [
         [['t'], 'table of contents'],
         [[']]', '[['], 'next / previous heading'],
