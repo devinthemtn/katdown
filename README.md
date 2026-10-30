@@ -87,7 +87,7 @@ Needs Go, Node/npm, the Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/
 make build                 # -> build/bin/katdown
 make dev FILE=README.md    # live-reloading dev mode
 make test
-make install               # copies to ~/.local/bin
+make install               # copies to ~/.local/bin + app launcher entry
 make build-windows         # -> build/bin/katdown.exe (cross-compiled)
 make install-windows       # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
 make installer-windows     # NSIS installer (needs makensis)

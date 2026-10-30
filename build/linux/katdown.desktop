@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=katdown
+GenericName=Markdown Viewer
+Comment=View Markdown files
+Exec=@BIN@ %f
+Icon=@ICON@
+Terminal=false
+Categories=Utility;Viewer;
+MimeType=text/markdown;text/x-markdown;
+StartupWMClass=katdown

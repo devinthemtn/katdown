@@ -25,8 +25,14 @@ dev:
 test:
 	go test ./internal/...
 
+# Also adds a launcher entry (build/linux/katdown.desktop) with the app icon.
 install: build
 	install -Dm755 build/bin/katdown $(HOME)/.local/bin/katdown
+	install -Dm644 build/appicon.png $(HOME)/.local/share/katdown/katdown.png
+	sed -e "s|@BIN@|$(HOME)/.local/bin/katdown|" -e "s|@ICON@|$(HOME)/.local/share/katdown/katdown.png|" \
+		build/linux/katdown.desktop > build/bin/katdown.desktop
+	install -Dm644 build/bin/katdown.desktop $(HOME)/.local/share/applications/katdown.desktop
+	-update-desktop-database -q $(HOME)/.local/share/applications 2>/dev/null
 
 # From WSL: copies katdown.exe to %LOCALAPPDATA%\Programs\katdown, then adds a
 # Start Menu shortcut and registers it for .md files (build/windows/install.ps1),

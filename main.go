@@ -12,12 +12,16 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 
 	"katdown/internal/config"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
+
+//go:embed build/appicon.png
+var icon []byte
 
 func main() {
 	makeConfig := flag.Bool("makeconfig", false, "create config.toml with the default settings, then exit")
@@ -88,6 +92,10 @@ func main() {
 		OnDomReady:       app.domReady,
 		OnShutdown:       app.shutdown,
 		Bind:             []interface{}{app},
+		Linux: &linux.Options{
+			Icon:        icon,
+			ProgramName: "katdown",
+		},
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
