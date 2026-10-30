@@ -91,10 +91,10 @@ make test
 make install               # copies to ~/.local/bin + app launcher entry
 make build-windows         # -> build/bin/katdown.exe (cross-compiled)
 make install-windows       # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
-make installer-windows     # NSIS installer (needs makensis)
+make build-win-installer   # -> build/bin/katdown-amd64-installer.exe for Windows users (needs makensis)
 ```
 
-The Windows build needs no extra toolchain; the target machine needs the WebView2 runtime (preinstalled on Windows 10/11). Windows won't let an app make itself the default for `.md`; after installing, right-click a `.md` file → Open with → katdown → Always.
+The Windows build needs no extra toolchain; the target machine needs the WebView2 runtime (preinstalled on Windows 10/11). The installer is the one to hand to Windows users: it installs per user without an admin prompt, adds Start Menu and desktop shortcuts and the `.md` Open with entry, and installs WebView2 if it is missing (that step needs internet). Uninstall from Settings → Apps. Windows won't let an app make itself the default for `.md`; after installing, right-click a `.md` file → Open with → katdown → Always.
 
 `make install-windows` also installs `katdown-win` in `~/.local/bin`, so `katdown-win notes.md` in the WSL shell opens the file in the Windows build (file arguments are converted with `wslpath -w`). Pick another name with `make install-windows WIN_WRAPPER=katdown`.
 

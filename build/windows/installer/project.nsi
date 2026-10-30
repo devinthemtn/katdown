@@ -30,9 +30,44 @@ Unicode true
 ####
 ## !define REQUEST_EXECUTION_LEVEL "admin"            # Default "admin"  see also https://nsis.sourceforge.io/Docs/Chapter4.html
 ####
+## katdown installs per user (no admin prompt) into %LOCALAPPDATA%\Programs\katdown,
+## the same place `make install-windows` uses.
+!define REQUEST_EXECUTION_LEVEL "user"
+!define WAILS_INSTALL_SCOPE "user"
+!define UNINST_KEY_NAME "katdown"
+####
 ## Include the wails tools
 ####
 !include "wails_tools.nsh"
+
+# Registers katdown as an "Open with" handler for .md files, like build/windows/install.ps1.
+# Windows won't let an installer make itself the default; pick katdown once via Open with -> Always.
+!define KATDOWN_OPEN "$\"$INSTDIR\${PRODUCT_EXECUTABLE}$\" $\"%1$\""
+!define KATDOWN_APP "Software\Classes\Applications\${PRODUCT_EXECUTABLE}"
+
+!macro katdown.registerMarkdown
+    WriteRegStr HKCU "Software\Classes\katdown.md" "" "Markdown document"
+    WriteRegStr HKCU "Software\Classes\katdown.md\DefaultIcon" "" "$\"$INSTDIR\${PRODUCT_EXECUTABLE}$\",0"
+    WriteRegStr HKCU "Software\Classes\katdown.md\shell\open\command" "" "${KATDOWN_OPEN}"
+    WriteRegStr HKCU "Software\Classes\.md\OpenWithProgids" "katdown.md" ""
+    WriteRegStr HKCU "Software\Classes\.markdown\OpenWithProgids" "katdown.md" ""
+
+    WriteRegStr HKCU "${KATDOWN_APP}" "FriendlyAppName" "katdown"
+    WriteRegStr HKCU "${KATDOWN_APP}\shell\open\command" "" "${KATDOWN_OPEN}"
+    WriteRegStr HKCU "${KATDOWN_APP}\SupportedTypes" ".md" ""
+    WriteRegStr HKCU "${KATDOWN_APP}\SupportedTypes" ".markdown" ""
+
+    # Tell Explorer the associations changed so the Open with list refreshes.
+    System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
+!macroend
+
+!macro katdown.unregisterMarkdown
+    DeleteRegKey HKCU "Software\Classes\katdown.md"
+    DeleteRegValue HKCU "Software\Classes\.md\OpenWithProgids" "katdown.md"
+    DeleteRegValue HKCU "Software\Classes\.markdown\OpenWithProgids" "katdown.md"
+    DeleteRegKey HKCU "${KATDOWN_APP}"
+    System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
+!macroend
 
 # The version information for this two must consist of 4 parts
 VIProductVersion "${INFO_PRODUCTVERSION}.0"
@@ -99,7 +134,7 @@ Section
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
-    !insertmacro wails.associateFiles
+    !insertmacro katdown.registerMarkdown
     !insertmacro wails.associateCustomProtocols
 
     !insertmacro wails.writeUninstaller
@@ -115,7 +150,7 @@ Section "uninstall"
     Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
     Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
 
-    !insertmacro wails.unassociateFiles
+    !insertmacro katdown.unregisterMarkdown
     !insertmacro wails.unassociateCustomProtocols
 
     !insertmacro wails.deleteUninstaller

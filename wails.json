@@ -6,6 +6,13 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "info": {
+    "companyName": "katdown",
+    "productName": "katdown",
+    "productVersion": "1.2.0",
+    "copyright": "Copyright 2026 Thomas Koefod",
+    "comments": "Markdown viewer"
+  },
   "author": {
     "name": "Thomas Koefod",
     "email": "devinthemtn@gmail.com"

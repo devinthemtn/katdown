@@ -6,7 +6,7 @@ WIN_INSTALL_DIR ?= $(shell command -v wslpath >/dev/null && wslpath "$$(cmd.exe 
 # Name of the WSL command that runs the Windows build (installed by install-windows).
 WIN_WRAPPER ?= katdown-win
 
-.PHONY: build build-windows installer-windows dev test install install-windows
+.PHONY: build build-windows build-win-installer dev test install install-windows
 
 build:
 	wails build -tags $(TAGS)
@@ -15,9 +15,14 @@ build:
 build-windows:
 	wails build -platform windows/amd64
 
-# NSIS installer in build/bin; needs makensis.
-installer-windows:
-	wails build -platform windows/amd64 -nsis
+# Installer for Windows users without dev tools: build/bin/katdown-amd64-installer.exe.
+# Installs per user (no admin), adds Start Menu and desktop shortcuts and the .md
+# Open with entry, and installs the WebView2 runtime if it's missing. Needs makensis.
+# Wails fills in wails_tools.nsh from its template while building; restore the template.
+build-win-installer:
+	wails build -platform windows/amd64 -nsis; s=$$?; \
+		git checkout -- build/windows/installer/wails_tools.nsh; \
+		rm -rf build/windows/installer/tmp; exit $$s
 
 dev:
 	wails dev -tags $(TAGS) $(if $(FILE),-appargs "$(FILE)")
