@@ -10,12 +10,14 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	goruntime "runtime"
 	"strings"
 	"sync"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"katdown/internal/config"
+	"katdown/internal/editor"
 	"katdown/internal/render"
 	"katdown/internal/watch"
 )
@@ -227,6 +229,30 @@ func openWindows(u string) error {
 		return err
 	}
 	// explorer.exe exits non-zero even on success, so only reap the process.
+	go cmd.Wait()
+	return nil
+}
+
+// EditFile opens the current file in the user's editor; see editor.Command.
+// The watcher reloads the view whenever the editor saves.
+func (a *App) EditFile() error {
+	p := a.currentPath()
+	if p == "" {
+		return fmt.Errorf("no file open")
+	}
+	settings, _ := config.LoadSettings()
+	cmd, err := editor.Command(settings.Editor.Command, p, editor.Env{
+		Getenv:   os.Getenv,
+		LookPath: exec.LookPath,
+		GOOS:     goruntime.GOOS,
+		WSL:      isWSL(),
+	})
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
 	go cmd.Wait()
 	return nil
 }

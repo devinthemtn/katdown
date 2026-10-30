@@ -12,7 +12,7 @@ const scrollBy = (dy) => window.scrollBy({top: dy, behavior: 'instant'});
 const page = () => window.innerHeight - 2 * LINE;
 const half = () => window.innerHeight / 2;
 
-export function initKeys({openFile, reload}) {
+export function initKeys({openFile, reload, edit}) {
     // Two-key sequences (gg, ]], [[): true on the second press of `key`.
     let pending = '';
     let pendingAt = 0;
@@ -71,6 +71,7 @@ export function initKeys({openFile, reload}) {
             case 'g': if (repeated('g')) window.scrollTo({top: 0, behavior: 'instant'}); break;
             case ']': if (repeated(']')) toc.jump(1); break;
             case '[': if (repeated('[')) toc.jump(-1); break;
+            case 'e': edit(); break;
             case 't': toc.open(); break;
             case '/': search.open(); break;
             case '?': help.open(); break;

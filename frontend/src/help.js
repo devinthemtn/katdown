@@ -17,6 +17,7 @@ const KEYS = [
         [['Esc'], 'clear search'],
     ]],
     ['File', [
+        [['e'], 'edit in your editor'],
         [['Ctrl-o'], 'open another file'],
         [['Ctrl-r'], 'reload'],
         [['?'], 'toggle this help'],

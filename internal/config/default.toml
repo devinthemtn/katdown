@@ -37,3 +37,10 @@ patterns = ['\{[^{}]+\}']
 # CSS color for highlighted text, e.g. "#e0af68" or "orange". Empty uses the
 # theme's color.
 color = ""
+
+[editor]
+# Command that opens the current file when you press e, e.g. "code --wait" or
+# "gvim -f"; the file name is added at the end. Empty uses $VISUAL, then the
+# system default (xdg-open, or Notepad on Windows). Use a GUI editor: katdown
+# has no terminal for vim or nano to run in.
+command = ""

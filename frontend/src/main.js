@@ -2,7 +2,7 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import './app.css';
 
-import {GetDocument, OpenExternal, OpenFile, OpenRelative} from '../wailsjs/go/main/App';
+import {EditFile, GetDocument, OpenExternal, OpenFile, OpenRelative} from '../wailsjs/go/main/App';
 import {EventsOn} from '../wailsjs/runtime/runtime';
 import {redrawDiagrams, renderDiagrams} from './diagrams';
 import {initKeys} from './keys';
@@ -78,6 +78,10 @@ content.addEventListener('click', (e) => {
 initKeys({
     openFile: () => OpenFile(),
     reload: load,
+    edit: () => EditFile().catch((err) => {
+        content.prepend(errorBanner(`Could not start editor: ${err}`));
+        window.scrollTo(0, 0);
+    }),
 });
 
 // With theme = "system", follow the OS as it switches.

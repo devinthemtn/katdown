@@ -44,6 +44,9 @@ type Settings struct {
 		Patterns []string `toml:"patterns"` // Go regular expressions
 		Color    string   `toml:"color"`    // empty: the theme's --highlight
 	} `toml:"highlight"`
+	Editor struct {
+		Command string `toml:"command"` // empty: $VISUAL, then the OS default
+	} `toml:"editor"`
 }
 
 type FontSettings struct {

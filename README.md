@@ -41,9 +41,14 @@ height = 900
 [highlight]
 patterns = ['\{[^{}]+\}']    # regular expressions (Go syntax); [] turns highlighting off
 color = ""                     # CSS color; empty uses the theme's --highlight
+
+[editor]
+command = ""                   # editor for the e key, e.g. "code --wait"; empty uses $VISUAL
 ```
 
 By default, anything in `{curly braces}` is highlighted, which suits templates and placeholders. Add patterns to mark other words, e.g. `patterns = ['\{[^{}]+\}', '\bTODO\b']`, using single quotes so backslashes are kept. Code, math and URLs are never highlighted, and `\{x}` skips one occurrence.
+
+`e` opens the file in `editor.command` if set, otherwise `$VISUAL`, otherwise the system default (`xdg-open` on Linux, Notepad on Windows and under WSL without `xdg-open`). `$EDITOR` is not used: it is normally a terminal editor, and katdown has no terminal to run it in.
 
 ## Styling
 
@@ -64,6 +69,7 @@ Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token cla
 | `/` | search (Enter to run, Esc to cancel); smartcase like vim |
 | `n` / `N` | next / previous match |
 | `Esc` | clear search |
+| `e` | edit the file in your editor (the view reloads on save) |
 | `Ctrl-o` | open another file |
 | `Ctrl-r` | reload |
 | `t` | table of contents (`j`/`k` to move, `Enter` to jump) |
