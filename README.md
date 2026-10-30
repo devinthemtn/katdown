@@ -89,11 +89,13 @@ make dev FILE=README.md    # live-reloading dev mode
 make test
 make install               # copies to ~/.local/bin
 make build-windows         # -> build/bin/katdown.exe (cross-compiled)
-make install-windows       # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler
+make install-windows       # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
 make installer-windows     # NSIS installer (needs makensis)
 ```
 
 The Windows build needs no extra toolchain; the target machine needs the WebView2 runtime (preinstalled on Windows 10/11). Windows won't let an app make itself the default for `.md`; after installing, right-click a `.md` file → Open with → katdown → Always.
+
+`make install-windows` also installs `katdown-win` in `~/.local/bin`, so `katdown-win notes.md` in the WSL shell opens the file in the Windows build (file arguments are converted with `wslpath -w`). Pick another name with `make install-windows WIN_WRAPPER=katdown`.
 
 On distros that still ship `webkit2gtk-4.0`, run `make build TAGS=`.
 
