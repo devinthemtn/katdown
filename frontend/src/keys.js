@@ -1,5 +1,5 @@
 // Vim-style navigation.
-import {Quit} from '../wailsjs/go/main/App';
+import {Quit} from '../bindings/katdown/app';
 import * as help from './help';
 import * as search from './search';
 import * as toc from './toc';

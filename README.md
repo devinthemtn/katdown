@@ -91,22 +91,31 @@ Links: web links open in the system browser, relative `.md` links open in katdow
 
 ## Building
 
-Needs Go, Node/npm, the Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`) and the GTK/WebKit dev packages (`wails doctor` lists them).
+Needs Go 1.26+, Node/npm, the Wails v3 CLI and the GTK/WebKit dev packages (`wails3 doctor` lists them; on Ubuntu 24.04 that's `libgtk-3-dev` and `libwebkit2gtk-4.1-dev`). Install the CLI with the same `gtk3` tag the build uses:
 
 ```
-make build                 # -> build/bin/katdown
-make dev FILE=README.md    # live-reloading dev mode
-make test
-make install               # copies to ~/.local/bin + app launcher entry
-make build-windows         # -> build/bin/katdown.exe (cross-compiled)
-make install-windows       # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
-make build-win-installer   # -> build/bin/katdown-amd64-installer.exe for Windows users (needs makensis)
+go install -tags gtk3 github.com/wailsapp/wails/v3/cmd/wails3@latest
+```
+
+`wails3 task` runs the tasks in `Taskfile.yml` (a standalone [Task](https://taskfile.dev) works too: `task build`):
+
+```
+wails3 task build                  # -> bin/katdown
+wails3 task dev FILE=README.md     # live-reloading dev mode
+wails3 task test
+wails3 task install                # copies to ~/.local/bin + app launcher entry
+wails3 task build-windows          # -> bin/katdown.exe (cross-compiled)
+wails3 task install-windows        # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
+wails3 task build-win-installer    # -> bin/katdown-amd64-installer.exe for Windows users (needs makensis)
+wails3 task --list                 # everything else
 ```
 
 The Windows build needs no extra toolchain; the target machine needs the WebView2 runtime (preinstalled on Windows 10/11). The installer is the one to hand to Windows users: it installs per user without an admin prompt, adds Start Menu and desktop shortcuts and the `.md` Open with entry, and installs WebView2 if it is missing (that step needs internet). Uninstall from Settings → Apps. Windows won't let an app make itself the default for `.md`; after installing, right-click a `.md` file → Open with → katdown → Always.
 
-`make install-windows` also installs `katdown-win` in `~/.local/bin`, so `katdown-win notes.md` in the WSL shell opens the file in the Windows build (file arguments are converted with `wslpath -w`). Pick another name with `make install-windows WIN_WRAPPER=katdown`.
+`wails3 task install-windows` also installs `katdown-win` in `~/.local/bin`, so `katdown-win notes.md` in the WSL shell opens the file in the Windows build (file arguments are converted with `wslpath -w`). Pick another name with `wails3 task install-windows WIN_WRAPPER=katdown`.
 
-On distros that still ship `webkit2gtk-4.0`, run `make build TAGS=`.
+The Linux build uses GTK 3 with webkit2gtk-4.1. To build against GTK 4 and webkitgtk-6.0 instead (`libgtk-4-dev`, `libwebkitgtk-6.0-dev`), run `wails3 task build GTK=4`. webkit2gtk-4.0 is no longer supported.
+
+Product name, version and copyright for the Windows exe, installer and macOS bundle live in `build/config.yml`; after changing them run `wails3 task common:update:build-assets`.
 
 If the window is blank under WSLg or with some GPU drivers, try `WEBKIT_DISABLE_DMABUF_RENDERER=1 katdown file.md`.

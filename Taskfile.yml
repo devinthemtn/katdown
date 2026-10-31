@@ -1,0 +1,107 @@
+version: '3'
+
+vars:
+  APP_NAME: "katdown"
+  BIN_DIR: "bin"
+  PACKAGE_MANAGER: '{{.PACKAGE_MANAGER | default "npm"}}'
+  VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  # Target OS for build/package/run. Defaults to the host OS, and is overridden
+  # by `wails3 build GOOS=...` (or the GOOS env var) for cross-compilation. The
+  # tasks below dispatch to the matching platform Taskfile via this variable.
+  GOOS: '{{.GOOS | default OS}}'
+  # Linux GTK version. 3 builds against webkit2gtk-4.1 (what Ubuntu 24.04 ships
+  # as libwebkit2gtk-4.1-dev); GTK=4 builds against gtk4 + webkitgtk-6.0.
+  GTK: '{{.GTK | default "3"}}'
+  EXTRA_TAGS: '{{if eq .GTK "3"}}gtk3{{end}}'
+  # Name of the WSL command that runs the Windows build (installed by install-windows).
+  WIN_WRAPPER: katdown-win
+
+includes:
+  common: ./build/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+  darwin: ./build/darwin/Taskfile.yml
+  linux: ./build/linux/Taskfile.yml
+
+tasks:
+  build:
+    desc: Builds the application
+    cmds:
+      - task: "{{.GOOS}}:build"
+
+  package:
+    summary: Packages a production build of the application
+    cmds:
+      - task: "{{.GOOS}}:package"
+
+  run:
+    summary: Runs the application
+    cmds:
+      - task: "{{.GOOS}}:run"
+
+  dev:
+    desc: Runs the application in live-reloading dev mode; FILE=README.md opens that file
+    # wails3 dev runs the build and run tasks as child processes, which read these from the environment.
+    env:
+      FILE: '{{.FILE}}'
+      GTK: '{{.GTK}}'
+    cmds:
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+
+  test:
+    desc: Runs the Go tests
+    cmds:
+      - go test ./internal/...
+
+  # Cross-compiles bin/katdown.exe (WebView2 needs no cgo, so no mingw toolchain required).
+  build-windows:
+    desc: Builds bin/katdown.exe
+    cmds:
+      - task: windows:build
+
+  # Installer for Windows users without dev tools: bin/katdown-amd64-installer.exe.
+  # Installs per user (no admin), adds Start Menu and desktop shortcuts and the .md
+  # Open with entry, and installs the WebView2 runtime if it's missing. Needs makensis.
+  build-win-installer:
+    desc: Builds bin/katdown-amd64-installer.exe (needs makensis)
+    cmds:
+      - task: windows:package
+        vars:
+          INSTALL_SCOPE: user
+
+  # Also adds a launcher entry (build/linux/katdown.desktop.in) with the app icon.
+  install:
+    desc: Installs katdown to ~/.local/bin with an app launcher entry
+    platforms: [linux]
+    deps: [build]
+    cmds:
+      - install -Dm755 {{.BIN_DIR}}/katdown "$HOME/.local/bin/katdown"
+      - install -Dm644 build/appicon.png "$HOME/.local/share/katdown/katdown.png"
+      - sed -e "s|@BIN@|$HOME/.local/bin/katdown|" -e "s|@ICON@|$HOME/.local/share/katdown/katdown.png|" build/linux/katdown.desktop.in > {{.BIN_DIR}}/katdown.desktop
+      - install -Dm644 {{.BIN_DIR}}/katdown.desktop "$HOME/.local/share/applications/katdown.desktop"
+      - cmd: update-desktop-database -q "$HOME/.local/share/applications" 2>/dev/null
+        ignore_error: true
+
+  # From WSL: copies katdown.exe to %LOCALAPPDATA%\Programs\katdown, then adds a
+  # Start Menu shortcut and registers it for .md files (build/windows/install.ps1),
+  # and installs ~/.local/bin/$WIN_WRAPPER to run it from the WSL shell.
+  install-windows:
+    desc: From WSL, installs katdown.exe for the Windows user, plus ~/.local/bin/katdown-win
+    platforms: [linux]
+    deps: [build-windows]
+    vars:
+      # Windows install dir, resolved through WSL interop (empty outside WSL).
+      WIN_INSTALL_DIR:
+        sh: '{{if .WIN_INSTALL_DIR}}echo "{{.WIN_INSTALL_DIR}}"{{else}}command -v wslpath >/dev/null && d=$(cmd.exe /c echo %LOCALAPPDATA% 2>/dev/null | tr -d "\r") && [ -n "$d" ] && echo "$(wslpath "$d")/Programs/katdown" || true{{end}}'
+    preconditions:
+      - sh: '[ -n "{{.WIN_INSTALL_DIR}}" ]'
+        msg: "not in WSL; set WIN_INSTALL_DIR"
+    cmds:
+      - install -Dm755 {{.BIN_DIR}}/katdown.exe "{{.WIN_INSTALL_DIR}}/katdown.exe"
+      - powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w build/windows/install.ps1)" -Exe "$(wslpath -w "{{.WIN_INSTALL_DIR}}/katdown.exe")"
+      - sed "s|@EXE@|{{.WIN_INSTALL_DIR}}/katdown.exe|" build/windows/katdown-win.sh > {{.BIN_DIR}}/{{.WIN_WRAPPER}}
+      - install -Dm755 {{.BIN_DIR}}/{{.WIN_WRAPPER}} "$HOME/.local/bin/{{.WIN_WRAPPER}}"
+
+  setup:docker:
+    summary: Builds Docker image for cross-compilation (~800MB download)
+    cmds:
+      - task: common:setup:docker

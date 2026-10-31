@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"katdown/internal/config"
 	"katdown/internal/editor"
@@ -27,14 +26,15 @@ import (
 // docChanged tells the frontend to fetch the document again.
 const docChanged = "doc:changed"
 
-var markdownFilter = []runtime.FileFilter{
+var markdownFilter = []application.FileFilter{
 	{DisplayName: "Markdown", Pattern: "*.md;*.markdown;*.mdown;*.mkd;*.txt"},
 	{DisplayName: "All files", Pattern: "*"},
 }
 
 // App is bound to the frontend; its exported methods are callable from JS.
 type App struct {
-	ctx context.Context
+	wails  *application.App
+	window *application.WebviewWindow
 
 	// rawHTML passes raw HTML in documents through to the page (-html).
 	rawHTML bool
@@ -69,11 +69,9 @@ func NewApp(path string, rawHTML bool) *App {
 	return &App{path: path, rawHTML: rawHTML}
 }
 
-func (a *App) startup(ctx context.Context) {
-	a.ctx = ctx
-}
-
-func (a *App) domReady(ctx context.Context) {
+// domReady runs once the page has loaded: it shows the file from the command
+// line, or asks for one and quits if none is chosen.
+func (a *App) domReady() {
 	a.mu.Lock()
 	p := a.path
 	a.mu.Unlock()
@@ -82,23 +80,27 @@ func (a *App) domReady(ctx context.Context) {
 		a.setFile(p)
 		return
 	}
-	p, err := runtime.OpenFileDialog(ctx, runtime.OpenDialogOptions{
-		Title:   "Open markdown file",
-		Filters: markdownFilter,
-	})
+	p, err := a.wails.Dialog.OpenFileWithOptions(&application.OpenFileDialogOptions{
+		Title:          "Open markdown file",
+		CanChooseFiles: true,
+		Filters:        markdownFilter,
+		Window:         a.window,
+	}).PromptForSingleSelection()
 	if err != nil || p == "" {
-		runtime.Quit(ctx)
+		a.wails.Quit()
 		return
 	}
 	a.setFile(p)
 }
 
-func (a *App) shutdown(ctx context.Context) {
+// ServiceShutdown is called by Wails when the app quits.
+func (a *App) ServiceShutdown() error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.watcher != nil {
 		a.watcher.Close()
 	}
+	return nil
 }
 
 // setFile makes p the displayed file, watches it, and tells the frontend.
@@ -109,15 +111,15 @@ func (a *App) setFile(p string) {
 		a.watcher.Close()
 		a.watcher = nil
 	}
-	w, err := watch.File(p, func() { runtime.EventsEmit(a.ctx, docChanged) })
+	w, err := watch.File(p, func() { a.wails.Event.Emit(docChanged) })
 	if err != nil {
 		log.Printf("watch %s: %v", p, err)
 	}
 	a.watcher = w
 	a.mu.Unlock()
 
-	runtime.WindowSetTitle(a.ctx, "katdown — "+filepath.Base(p))
-	runtime.EventsEmit(a.ctx, docChanged)
+	a.window.SetTitle("katdown — " + filepath.Base(p))
+	a.wails.Event.Emit(docChanged)
 }
 
 func (a *App) currentPath() string {
@@ -169,11 +171,13 @@ func (a *App) OpenFile() {
 	if p := a.currentPath(); p != "" {
 		dir = filepath.Dir(p)
 	}
-	p, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title:            "Open markdown file",
-		DefaultDirectory: dir,
-		Filters:          markdownFilter,
-	})
+	p, err := a.wails.Dialog.OpenFileWithOptions(&application.OpenFileDialogOptions{
+		Title:          "Open markdown file",
+		Directory:      dir,
+		CanChooseFiles: true,
+		Filters:        markdownFilter,
+		Window:         a.window,
+	}).PromptForSingleSelection()
 	if err != nil || p == "" {
 		return
 	}
@@ -221,7 +225,9 @@ func (a *App) OpenExternal(u string) {
 			log.Printf("katdown: opening %s via Windows: %v", u, err)
 		}
 	}
-	runtime.BrowserOpenURL(a.ctx, u)
+	if err := a.wails.Browser.OpenURL(u); err != nil {
+		log.Printf("katdown: opening %s: %v", u, err)
+	}
 }
 
 func isWSL() bool {
@@ -292,7 +298,7 @@ const editorGrace = time.Second
 
 // Quit closes the app.
 func (a *App) Quit() {
-	runtime.Quit(a.ctx)
+	a.wails.Quit()
 }
 
 // localFiles serves files next to the current document (e.g. relative images)
