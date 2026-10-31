@@ -91,10 +91,10 @@ Links: web links open in the system browser, relative `.md` links open in katdow
 
 ## Building
 
-Needs Go 1.26+, Node/npm, the Wails v3 CLI and the GTK/WebKit dev packages (`wails3 doctor` lists them; on Ubuntu 24.04 that's `libgtk-3-dev` and `libwebkit2gtk-4.1-dev`). Install the CLI with the same `gtk3` tag the build uses:
+Needs Go 1.26+, Node/npm, the Wails v3 CLI and the GTK/WebKit dev packages (`wails3 doctor` lists them; on Ubuntu 24.04 that's `libgtk-3-dev` and `libwebkit2gtk-4.1-dev`). Install the CLI at the version in `go.mod`, with the same `gtk3` tag the build uses (Wails drops GTK 3 in v3.1, so upgrading past v3.0.x means switching to GTK 4):
 
 ```
-go install -tags gtk3 github.com/wailsapp/wails/v3/cmd/wails3@latest
+go install -tags gtk3 github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
 ```
 
 `wails3 task` runs the tasks in `Taskfile.yml` (a standalone [Task](https://taskfile.dev) works too: `task build`):
