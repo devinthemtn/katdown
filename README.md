@@ -10,7 +10,7 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 
 - `katdown notes.md` opens the file. It re-renders automatically when the file is saved.
 - `katdown` with no file shows a file picker; cancelling it quits.
-- `katdown -html notes.md` renders raw HTML in the document (`<details>`, `<kbd>`, `<img width=…>` and so on) instead of dropping it. Only use it on files you trust: HTML event handlers such as `onerror` can run script with access to katdown's file and editor functions.
+- `katdown -html notes.md` turns off HTML sanitizing, so scripts, `<style>`, inline styles and iframes in the document work too. Only use it on files you trust: script can reach katdown's file and editor functions.
 - `katdown -makeconfig` creates `~/.config/katdown/config.toml` (the standard config folder on each OS) with every setting at its default, then exits. katdown also does this by itself on first start.
 - `katdown -makestyle` creates `style.css` in the same folder containing the default stylesheet, then exits.
 
@@ -21,7 +21,7 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 
 Neither ever overwrites an existing file.
 
-Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. Raw HTML in documents is dropped unless katdown is started with `-html`.
+Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. YAML front matter (a `---` block at the very top) is shown as a collapsed table instead of as text. Raw HTML in documents is sanitized: common tags such as `<details>`, `<kbd>`, `<sub>`, `<img width=…>` and `<p align="center">` work, while scripts, styles, event handlers and `javascript:` links are removed (start katdown with `-html` to keep everything).
 
 ## Settings
 
@@ -64,7 +64,7 @@ The default look uses the bundled Inter and JetBrains Mono fonts, with a dark an
 
 If `style.css` exists in the config folder, it **replaces** the built-in style. Run `-makestyle` to get a full copy of the default to edit; delete the file to go back to the default. The palette is a set of CSS variables at the top of the file (Mermaid diagrams use them too), with the light palette under `:root[data-theme="light"]`. The settings still apply on top of a custom `style.css`: they set `data-theme` on `<html>`, the `--font-body`, `--font-mono`, `--font-size` and `--content-width` variables, and the code colors (which a `style.css` can override).
 
-Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents overlay), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words).
+Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents overlay), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words), `.katdown-frontmatter` (the front matter; `display: none` hides it).
 
 ## Keys
 
@@ -80,32 +80,42 @@ Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token cla
 | `Esc` | clear search |
 | `e` | edit the file in your editor (the view reloads on save) |
 | `Ctrl-o` | open another file |
+| `H` / `L` | back / forward between files (followed links, `Ctrl-o`) |
 | `Ctrl-r` | reload |
 | `t` | table of contents (`j`/`k` to move, `Enter` to jump) |
 | `]]` / `[[` | next / previous heading |
 | `?` | show / hide key help |
 | `q` | quit |
 
-Links: web links open in the system browser, relative `.md` links open in katdown.
+Links: web links open in the system browser, relative `.md` links open in katdown (`other.md#heading` scrolls to the heading), and `H` goes back to where you were.
 
 ## Building
 
-Needs Go, Node/npm, the Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`) and the GTK/WebKit dev packages (`wails doctor` lists them).
+Needs Go 1.26+, Node/npm, the Wails v3 CLI and the GTK/WebKit dev packages (`wails3 doctor` lists them; on Ubuntu 24.04 that's `libgtk-3-dev` and `libwebkit2gtk-4.1-dev`). Install the CLI at the version in `go.mod`, with the same `gtk3` tag the build uses (Wails drops GTK 3 in v3.1, so upgrading past v3.0.x means switching to GTK 4):
 
 ```
-make build                 # -> build/bin/katdown
-make dev FILE=README.md    # live-reloading dev mode
-make test
-make install               # copies to ~/.local/bin + app launcher entry
-make build-windows         # -> build/bin/katdown.exe (cross-compiled)
-make install-windows       # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
-make build-win-installer   # -> build/bin/katdown-amd64-installer.exe for Windows users (needs makensis)
+go install -tags gtk3 github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+```
+
+`wails3 task` runs the tasks in `Taskfile.yml` (a standalone [Task](https://taskfile.dev) works too: `task build`):
+
+```
+wails3 task build                  # -> bin/katdown
+wails3 task dev FILE=README.md     # live-reloading dev mode
+wails3 task test
+wails3 task install                # copies to ~/.local/bin + app launcher entry
+wails3 task build-windows          # -> bin/katdown.exe (cross-compiled)
+wails3 task install-windows        # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
+wails3 task build-win-installer    # -> bin/katdown-amd64-installer.exe for Windows users (needs makensis)
+wails3 task --list                 # everything else
 ```
 
 The Windows build needs no extra toolchain; the target machine needs the WebView2 runtime (preinstalled on Windows 10/11). The installer is the one to hand to Windows users: it installs per user without an admin prompt, adds Start Menu and desktop shortcuts and the `.md` Open with entry, and installs WebView2 if it is missing (that step needs internet). Uninstall from Settings → Apps. Windows won't let an app make itself the default for `.md`; after installing, right-click a `.md` file → Open with → katdown → Always.
 
-`make install-windows` also installs `katdown-win` in `~/.local/bin`, so `katdown-win notes.md` in the WSL shell opens the file in the Windows build (file arguments are converted with `wslpath -w`). Pick another name with `make install-windows WIN_WRAPPER=katdown`.
+`wails3 task install-windows` also installs `katdown-win` in `~/.local/bin`, so `katdown-win notes.md` in the WSL shell opens the file in the Windows build (file arguments are converted with `wslpath -w`). Pick another name with `wails3 task install-windows WIN_WRAPPER=katdown`.
 
-On distros that still ship `webkit2gtk-4.0`, run `make build TAGS=`.
+The Linux build uses GTK 3 with webkit2gtk-4.1. To build against GTK 4 and webkitgtk-6.0 instead (`libgtk-4-dev`, `libwebkitgtk-6.0-dev`), run `wails3 task build GTK=4`. webkit2gtk-4.0 is no longer supported.
+
+Product name, version and copyright for the Windows exe, installer and macOS bundle live in `build/config.yml`; after changing them run `wails3 task update-build-assets`.
 
 If the window is blank under WSLg or with some GPU drivers, try `WEBKIT_DISABLE_DMABUF_RENDERER=1 katdown file.md`.

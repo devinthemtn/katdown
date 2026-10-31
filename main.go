@@ -9,10 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"katdown/internal/config"
 )
@@ -26,7 +24,7 @@ var icon []byte
 func main() {
 	makeConfig := flag.Bool("makeconfig", false, "create config.toml with the default settings, then exit")
 	makeStyle := flag.Bool("makestyle", false, "create style.css with the default stylesheet, then exit")
-	rawHTML := flag.Bool("html", false, "render raw HTML in the document instead of dropping it; only for files you trust")
+	rawHTML := flag.Bool("html", false, "don't sanitize raw HTML in the document (allows scripts and styles); only for files you trust")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-makeconfig] [-makestyle] [file.md]\n\n")
 		flag.PrintDefaults()
@@ -74,31 +72,34 @@ func main() {
 	}
 	// Problems with the file are shown in the window once it opens.
 	settings, _ := config.LoadSettings()
-	bg := &options.RGBA{R: 13, G: 16, B: 23, A: 255}
+	bg := application.NewRGB(13, 16, 23)
 	if settings.Theme == "light" {
-		bg = &options.RGBA{R: 251, G: 251, B: 250, A: 255}
+		bg = application.NewRGB(251, 251, 250)
 	}
 
 	app := NewApp(path, *rawHTML)
-	err := wails.Run(&options.App{
-		Title:  "katdown",
-		Width:  settings.Window.Width,
-		Height: settings.Window.Height,
-		AssetServer: &assetserver.Options{
-			Assets:  assets,
-			Handler: http.HandlerFunc(app.localFiles),
+	app.wails = application.New(application.Options{
+		Name:     "katdown",
+		Icon:     icon,
+		Services: []application.Service{application.NewService(app)},
+		Assets: application.AssetOptions{
+			Handler: withFallback(application.AssetFileServerFS(assets), http.HandlerFunc(app.localFiles)),
 		},
-		BackgroundColour: bg,
-		OnStartup:        app.startup,
-		OnDomReady:       app.domReady,
-		OnShutdown:       app.shutdown,
-		Bind:             []interface{}{app},
-		Linux: &linux.Options{
-			Icon:        icon,
+		Linux: application.LinuxOptions{
 			ProgramName: "katdown",
 		},
 	})
-	if err != nil {
+	app.window = app.wails.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "katdown",
+		Width:            settings.Window.Width,
+		Height:           settings.Window.Height,
+		BackgroundColour: bg,
+		URL:              "/",
+	})
+	app.window.OnWindowEvent(events.Common.WindowRuntimeReady, func(*application.WindowEvent) {
+		app.domReady()
+	})
+	if err := app.wails.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
@@ -116,4 +117,47 @@ func writeConfigFile(write func() (string, bool, error)) {
 	} else {
 		fmt.Println(path, "already exists, left untouched")
 	}
+}
+
+// withFallback serves requests with h, and hands those h answers with 404 to
+// fallback instead, like Wails v2's AssetServer.Handler did.
+func withFallback(h, fallback http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fw := &fallbackWriter{ResponseWriter: w}
+		h.ServeHTTP(fw, r)
+		if fw.notFound {
+			fallback.ServeHTTP(w, r)
+		}
+	})
+}
+
+// fallbackWriter passes a response through unless its status is 404, in
+// which case it drops the status and body so the fallback can answer.
+type fallbackWriter struct {
+	http.ResponseWriter
+	wrote    bool
+	notFound bool
+}
+
+func (w *fallbackWriter) WriteHeader(code int) {
+	if w.wrote {
+		return
+	}
+	w.wrote = true
+	if code == http.StatusNotFound {
+		w.notFound = true
+		clear(w.Header())
+		return
+	}
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func (w *fallbackWriter) Write(b []byte) (int, error) {
+	if !w.wrote {
+		w.WriteHeader(http.StatusOK)
+	}
+	if w.notFound {
+		return len(b), nil
+	}
+	return w.ResponseWriter.Write(b)
 }

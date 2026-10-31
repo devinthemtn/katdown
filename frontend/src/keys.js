@@ -1,5 +1,5 @@
 // Vim-style navigation.
-import {Quit} from '../wailsjs/go/main/App';
+import {Quit} from '../bindings/katdown/app';
 import * as help from './help';
 import * as search from './search';
 import * as toc from './toc';
@@ -22,7 +22,7 @@ const setZoom = (z) => {
     document.body.style.fontSize = zoom === 1 ? '' : `calc(var(--font-size) * ${zoom})`;
 };
 
-export function initKeys({openFile, reload, edit}) {
+export function initKeys({openFile, reload, edit, back, forward}) {
     // Two-key sequences (gg, ]], [[): true on the second press of `key`.
     let pending = '';
     let pendingAt = 0;
@@ -87,6 +87,8 @@ export function initKeys({openFile, reload, edit}) {
             case ']': if (repeated(']')) toc.jump(1); break;
             case '[': if (repeated('[')) toc.jump(-1); break;
             case 'e': edit(); break;
+            case 'H': back(); break;
+            case 'L': forward(); break;
             case 't': toc.open(); break;
             case '/': search.open(); break;
             case '?': help.open(); break;
