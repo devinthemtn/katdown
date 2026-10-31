@@ -1,3 +1,7 @@
+---
+title: katdown demo
+tags: [markdown, viewer]
+---
 # katdown demo
 
 A tour of everything katdown renders. Open it with `katdown demo.md`, press `t` for the table of contents, `]]` / `[[` to hop between headings, and `?` for the key help.

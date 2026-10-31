@@ -64,11 +64,15 @@ func newPolicy() *bluemonday.Policy {
 // highlight patterns is wrapped in <span class="katdown-highlight">. Unless
 // rawHTML is set, the output is sanitized: safe raw HTML such as <details> or
 // <kbd> is kept, while scripts, styles, event handlers and javascript: URLs
-// are removed.
+// are removed. YAML front matter is shown as a collapsed table.
 func Render(src []byte, highlights []*regexp.Regexp, rawHTML bool) (string, error) {
+	var buf bytes.Buffer
+	if front, rest, ok := splitFrontMatter(src); ok {
+		buf.WriteString(frontMatterHTML(front))
+		src = rest
+	}
 	pc := parser.NewContext()
 	pc.Set(highlightKey, highlights)
-	var buf bytes.Buffer
 	if err := md.Convert(src, &buf, parser.WithContext(pc)); err != nil {
 		return "", err
 	}

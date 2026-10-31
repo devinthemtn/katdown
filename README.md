@@ -21,7 +21,7 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 
 Neither ever overwrites an existing file.
 
-Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. Raw HTML in documents is sanitized: common tags such as `<details>`, `<kbd>`, `<sub>`, `<img width=…>` and `<p align="center">` work, while scripts, styles, event handlers and `javascript:` links are removed (start katdown with `-html` to keep everything).
+Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. YAML front matter (a `---` block at the very top) is shown as a collapsed table instead of as text. Raw HTML in documents is sanitized: common tags such as `<details>`, `<kbd>`, `<sub>`, `<img width=…>` and `<p align="center">` work, while scripts, styles, event handlers and `javascript:` links are removed (start katdown with `-html` to keep everything).
 
 ## Settings
 
@@ -64,7 +64,7 @@ The default look uses the bundled Inter and JetBrains Mono fonts, with a dark an
 
 If `style.css` exists in the config folder, it **replaces** the built-in style. Run `-makestyle` to get a full copy of the default to edit; delete the file to go back to the default. The palette is a set of CSS variables at the top of the file (Mermaid diagrams use them too), with the light palette under `:root[data-theme="light"]`. The settings still apply on top of a custom `style.css`: they set `data-theme` on `<html>`, the `--font-body`, `--font-mono`, `--font-size` and `--content-width` variables, and the code colors (which a `style.css` can override).
 
-Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents overlay), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words).
+Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents overlay), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words), `.katdown-frontmatter` (the front matter; `display: none` hides it).
 
 ## Keys
 
