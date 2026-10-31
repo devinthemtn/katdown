@@ -10,7 +10,7 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 
 - `katdown notes.md` opens the file. It re-renders automatically when the file is saved.
 - `katdown` with no file shows a file picker; cancelling it quits.
-- `katdown -html notes.md` renders raw HTML in the document (`<details>`, `<kbd>`, `<img width=…>` and so on) instead of dropping it. Only use it on files you trust: HTML event handlers such as `onerror` can run script with access to katdown's file and editor functions.
+- `katdown -html notes.md` turns off HTML sanitizing, so scripts, `<style>`, inline styles and iframes in the document work too. Only use it on files you trust: script can reach katdown's file and editor functions.
 - `katdown -makeconfig` creates `~/.config/katdown/config.toml` (the standard config folder on each OS) with every setting at its default, then exits. katdown also does this by itself on first start.
 - `katdown -makestyle` creates `style.css` in the same folder containing the default stylesheet, then exits.
 
@@ -21,7 +21,7 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 
 Neither ever overwrites an existing file.
 
-Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. Raw HTML in documents is dropped unless katdown is started with `-html`.
+Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. Raw HTML in documents is sanitized: common tags such as `<details>`, `<kbd>`, `<sub>`, `<img width=…>` and `<p align="center">` work, while scripts, styles, event handlers and `javascript:` links are removed (start katdown with `-html` to keep everything).
 
 ## Settings
 

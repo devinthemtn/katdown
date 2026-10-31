@@ -34,10 +34,45 @@ func TestRenderHighlighting(t *testing.T) {
 	}
 }
 
-func TestRenderEscapesRawHTML(t *testing.T) {
-	out := render(t, "hi\n\n<script>alert(1)</script>\n")
-	if strings.Contains(out, "<script>") {
-		t.Errorf("raw script tag was not escaped:\n%s", out)
+func TestRenderSanitizesRawHTML(t *testing.T) {
+	tests := []struct {
+		name, src string
+		want      []string
+		not       []string
+	}{
+		{"script", "hi\n\n<script>alert(1)</script>\n", []string{"<p>hi</p>"}, []string{"<script", "alert"}},
+		{"event handler", `<img src="a.png" onerror="alert(1)">`, []string{`<img src="a.png">`}, []string{"onerror"}},
+		{"html js link", `<a href="javascript:alert(1)">x</a>`, nil, []string{"javascript:"}},
+		{"markdown js link", "[x](javascript:alert(1))", nil, []string{"javascript:"}},
+		{"style", "<style>body{display:none}</style>\n\n<p style=\"color:red\">x</p>", nil, []string{"<style", "style="}},
+		{"iframe", `<iframe src="https://example.com"></iframe>`, nil, []string{"<iframe"}},
+		{"kept", "hi <kbd>Ctrl</kbd> H<sub>2</sub>O\n\n<details><summary>more</summary>\n\nbody\n\n</details>\n\n<p align=\"center\"><img src=\"logo.png\" width=\"80\" alt=\"logo\"></p>\n", []string{
+			"<kbd>Ctrl</kbd>", "<sub>2</sub>", "<details>", "<summary>more</summary>", "<p>body</p>",
+			`<p align="center">`, `<img src="logo.png" width="80" alt="logo">`,
+		}, nil},
+		{"links", "[a](other.md#x) [b](https://example.com) <https://example.org>", []string{
+			`<a href="other.md#x">a</a>`, `<a href="https://example.com">b</a>`, `<a href="https://example.org">`,
+		}, nil},
+		{"table alignment", "| a | b |\n|:--|--:|\n| 1 | 2 |\n", []string{`<th style="text-align: left">a</th>`, `<td style="text-align: right">2</td>`}, nil},
+		{"style on other elements", `<td style="text-align: left; background: url(x)">x</td>`, nil, []string{"background"}},
+		{"task list", "- [x] done\n", []string{`<input checked="" disabled="" type="checkbox">`}, nil},
+		{"footnote", "a[^1]\n\n[^1]: note\n", []string{`id="fnref:1"`, `href="#fn:1"`, `class="footnote-ref"`}, nil},
+		{"heading id", "## Hello there\n", []string{`<h2 id="hello-there">`}, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := render(t, tt.src)
+			for _, w := range tt.want {
+				if !strings.Contains(out, w) {
+					t.Errorf("output missing %q:\n%s", w, out)
+				}
+			}
+			for _, n := range tt.not {
+				if strings.Contains(out, n) {
+					t.Errorf("output should not contain %q:\n%s", n, out)
+				}
+			}
+		})
 	}
 }
 
