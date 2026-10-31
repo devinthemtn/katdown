@@ -45,6 +45,11 @@ html, body {
     font-size: 1.15em;
     color: var(--fg-strong, #eef2f7);
 }
+:where(#katdown-help .version) {
+    margin: 0.15rem 0 0;
+    font-size: 0.8em;
+    color: var(--muted, #7d8899);
+}
 :where(#katdown-help th) {
     padding: 1rem 0 0.35rem;
     text-align: left;

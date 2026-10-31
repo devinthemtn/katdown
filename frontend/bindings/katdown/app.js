@@ -79,3 +79,11 @@ export function Quit() {
 export function ResolveRelative(href) {
     return $Call.ByID(168733763, href);
 }
+
+/**
+ * Version returns katdown's version, for the help overlay.
+ * @returns {$CancellablePromise<string>}
+ */
+export function Version() {
+    return $Call.ByID(2431199839);
+}

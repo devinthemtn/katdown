@@ -25,8 +25,9 @@ func main() {
 	makeConfig := flag.Bool("makeconfig", false, "create config.toml with the default settings, then exit")
 	makeStyle := flag.Bool("makestyle", false, "create style.css with the default stylesheet, then exit")
 	rawHTML := flag.Bool("html", false, "don't sanitize raw HTML in the document (allows scripts and styles); only for files you trust")
+	showVersion := flag.Bool("version", false, "print the version, then exit")
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-makeconfig] [-makestyle] [file.md]\n\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-makeconfig] [-makestyle] [-version] [file.md]\n\n")
 		flag.PrintDefaults()
 		if p, err := config.SettingsPath(); err == nil {
 			fmt.Fprintf(flag.CommandLine.Output(), "\nSettings:          %s\n", p)
@@ -36,6 +37,11 @@ func main() {
 		}
 	}
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println("katdown", version)
+		return
+	}
 
 	if *makeConfig || *makeStyle {
 		if *makeConfig {
