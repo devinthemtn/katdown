@@ -10,7 +10,7 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 
 - `katdown notes.md` opens the file. It re-renders automatically when the file is saved.
 - `katdown` with no file shows a file picker; cancelling it quits.
-- `katdown -html notes.md` turns off HTML sanitizing, so scripts, `<style>`, inline styles and iframes in the document work too. Only use it on files you trust: script can reach katdown's file and editor functions.
+- `katdown -html notes.md` turns off HTML sanitizing, so scripts, `<style>`, inline styles and iframes in the document work too. Only use it on files you trust: script can reach katdown's file and editor functions. To make this the default, set `unsafe = true` under `[html]` in the [settings](#settings).
 - `katdown -makeconfig` creates `~/.config/katdown/config.toml` (the standard config folder on each OS) with every setting at its default, then exits. katdown also does this by itself on first start.
 - `katdown -makestyle` creates `style.css` in the same folder containing the default stylesheet, then exits.
 
@@ -115,6 +115,9 @@ color = ""                     # CSS color; empty uses the theme's --highlight
 
 [editor]
 command = ""                   # editor for the e key, e.g. "code --wait"; empty uses $VISUAL
+
+[html]
+unsafe = false                 # true always keeps raw HTML, like -html; only if you trust every file
 ```
 
 By default, anything in `{curly braces}` is highlighted, which suits templates and placeholders. Add patterns to mark other words, e.g. `patterns = ['\{[^{}]+\}', '\bTODO\b']`, using single quotes so backslashes are kept. Code, math and URLs are never highlighted, and `\{x}` skips one occurrence.

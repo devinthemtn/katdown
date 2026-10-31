@@ -43,6 +43,19 @@ func TestLoadSettingsPartial(t *testing.T) {
 	}
 }
 
+func TestParseSettingsHTMLUnsafe(t *testing.T) {
+	if Defaults().HTML.Unsafe {
+		t.Error("html.unsafe should default to false")
+	}
+	s, err := ParseSettings("[html]\nunsafe = true\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.HTML.Unsafe {
+		t.Error("html.unsafe = true was not applied")
+	}
+}
+
 func TestParseSettingsInvalidValues(t *testing.T) {
 	s, err := ParseSettings(`
 theme = "purple"

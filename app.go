@@ -156,7 +156,7 @@ func (a *App) GetDocument() Document {
 		doc.Error = err.Error()
 		return doc
 	}
-	html, err := render.Render(src, settings.HighlightPatterns(), a.rawHTML)
+	html, err := render.Render(src, settings.HighlightPatterns(), a.rawHTML || settings.HTML.Unsafe)
 	if err != nil {
 		doc.Error = err.Error()
 		return doc

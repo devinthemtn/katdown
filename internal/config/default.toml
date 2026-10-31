@@ -44,3 +44,10 @@ color = ""
 # system default (xdg-open, or Notepad on Windows). Use a GUI editor: katdown
 # has no terminal for vim or nano to run in.
 command = ""
+
+[html]
+# true keeps all raw HTML in documents, like starting katdown with -html:
+# scripts, <style>, inline styles and iframes work. Only turn this on if you
+# trust every file you open, since script can reach katdown's file and editor
+# functions. false removes the unsafe parts.
+unsafe = false
