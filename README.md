@@ -23,6 +23,69 @@ Neither ever overwrites an existing file.
 
 Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. YAML front matter (a `---` block at the very top) is shown as a collapsed table instead of as text. Raw HTML in documents is sanitized: common tags such as `<details>`, `<kbd>`, `<sub>`, `<img width=…>` and `<p align="center">` work, while scripts, styles, event handlers and `javascript:` links are removed (start katdown with `-html` to keep everything).
 
+## Install
+
+katdown is installed by building it from source. Both ways below build the app and then:
+
+- copy the binary to `~/.local/bin/katdown` (make sure `~/.local/bin` is on your `PATH`)
+- put the icon at `~/.local/share/katdown/katdown.png`
+- add an app launcher entry at `~/.local/share/applications/katdown.desktop`
+
+`build` on its own only writes `bin/katdown` and doesn't copy anything; use `install` to put katdown on your system.
+
+### Requirements
+
+- Go 1.26+
+- Node and npm
+- The GTK 3 and WebKit dev packages. On Ubuntu 24.04:
+
+  ```
+  sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev
+  ```
+
+  `wails3 doctor` lists what's missing on other distros.
+
+Then get the source:
+
+```
+git clone https://github.com/devinthemtn/katdown.git
+cd katdown
+```
+
+### Install with the Wails CLI
+
+Install the Wails v3 CLI at the version in `go.mod`, with the `gtk3` tag the build uses:
+
+```
+go install -tags gtk3 github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+```
+
+Then build and install:
+
+```
+wails3 task install
+```
+
+`wails3 task` comes with its own copy of [Task](https://taskfile.dev), so you don't need to install go-task.
+
+### Install with go-task
+
+If you already have [go-task](https://taskfile.dev) (the `task` command), you can use it in place of `wails3 task`:
+
+```
+task install
+```
+
+The build still calls the `wails3` CLI to generate bindings and the `.desktop` file, so install it as well (see the `go install` command above).
+
+### Windows (from WSL)
+
+```
+wails3 task install-windows        # or: task install-windows
+```
+
+This cross-compiles `katdown.exe`, copies it to `%LOCALAPPDATA%\Programs\katdown`, adds a Start Menu shortcut and an `.md` Open with entry, and installs `katdown-win` in `~/.local/bin` for opening files from the WSL shell. See [Building](#building) for the standalone Windows installer.
+
 ## Settings
 
 Settings live in `config.toml` in the config folder (`katdown -h` prints its path). katdown creates it with the defaults on first start; it never overwrites it, so delete it to get a fresh copy. Every setting is optional; anything left out uses the default below. Press `Ctrl-r` to apply edits; window size applies on the next start. Mistakes are shown at the top of the window, and the default is used for that setting.
@@ -91,11 +154,7 @@ Links: web links open in the system browser, relative `.md` links open in katdow
 
 ## Building
 
-Needs Go 1.26+, Node/npm, the Wails v3 CLI and the GTK/WebKit dev packages (`wails3 doctor` lists them; on Ubuntu 24.04 that's `libgtk-3-dev` and `libwebkit2gtk-4.1-dev`). Install the CLI at the version in `go.mod`, with the same `gtk3` tag the build uses (Wails drops GTK 3 in v3.1, so upgrading past v3.0.x means switching to GTK 4):
-
-```
-go install -tags gtk3 github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
-```
+Needs the same tools as [Install](#install). The Wails CLI is pinned to v3.0.x because Wails drops GTK 3 in v3.1, so upgrading past it means switching to GTK 4.
 
 `wails3 task` runs the tasks in `Taskfile.yml` (a standalone [Task](https://taskfile.dev) works too: `task build`):
 
