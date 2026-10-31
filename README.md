@@ -80,13 +80,14 @@ Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token cla
 | `Esc` | clear search |
 | `e` | edit the file in your editor (the view reloads on save) |
 | `Ctrl-o` | open another file |
+| `H` / `L` | back / forward between files (followed links, `Ctrl-o`) |
 | `Ctrl-r` | reload |
 | `t` | table of contents (`j`/`k` to move, `Enter` to jump) |
 | `]]` / `[[` | next / previous heading |
 | `?` | show / hide key help |
 | `q` | quit |
 
-Links: web links open in the system browser, relative `.md` links open in katdown.
+Links: web links open in the system browser, relative `.md` links open in katdown (`other.md#heading` scrolls to the heading), and `H` goes back to where you were.
 
 ## Building
 

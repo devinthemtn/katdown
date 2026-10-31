@@ -23,6 +23,7 @@ const KEYS = [
     ['File', [
         [['e'], 'edit in your editor'],
         [['Ctrl-o'], 'open another file'],
+        [['H', 'L'], 'back / forward between files'],
         [['Ctrl-r'], 'reload'],
         [['?'], 'toggle this help'],
         [['q'], 'quit'],

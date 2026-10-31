@@ -10,6 +10,8 @@ export function OpenExternal(arg1:string):Promise<void>;
 
 export function OpenFile():Promise<void>;
 
-export function OpenRelative(arg1:string):Promise<void>;
+export function OpenPath(arg1:string):Promise<void>;
 
 export function Quit():Promise<void>;
+
+export function ResolveRelative(arg1:string):Promise<string>;

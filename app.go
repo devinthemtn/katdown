@@ -180,24 +180,34 @@ func (a *App) OpenFile() {
 	a.setFile(p)
 }
 
-// OpenRelative opens a link target relative to the current file's directory,
-// such as another .md file linked from this one.
-func (a *App) OpenRelative(href string) error {
+// ResolveRelative returns the file a link such as "other.md#intro" points to,
+// relative to the current file's directory. The fragment is dropped; the
+// frontend scrolls to it once the file is shown.
+func (a *App) ResolveRelative(href string) (string, error) {
 	cur := a.currentPath()
 	if cur == "" {
-		return fmt.Errorf("no file open")
+		return "", fmt.Errorf("no file open")
 	}
 	target, err := url.PathUnescape(strings.SplitN(href, "#", 2)[0])
 	if err != nil {
-		return err
+		return "", err
 	}
 	if !filepath.IsAbs(target) {
 		target = filepath.Join(filepath.Dir(cur), filepath.FromSlash(target))
 	}
 	if _, err := os.Stat(target); err != nil {
+		return "", err
+	}
+	return target, nil
+}
+
+// OpenPath displays the file at p, an absolute path such as one returned by
+// ResolveRelative or an earlier Document.Path.
+func (a *App) OpenPath(p string) error {
+	if _, err := os.Stat(p); err != nil {
 		return err
 	}
-	a.setFile(target)
+	a.setFile(p)
 	return nil
 }
 

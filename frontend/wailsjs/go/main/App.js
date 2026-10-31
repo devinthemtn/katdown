@@ -18,10 +18,14 @@ export function OpenFile() {
   return window['go']['main']['App']['OpenFile']();
 }
 
-export function OpenRelative(arg1) {
-  return window['go']['main']['App']['OpenRelative'](arg1);
+export function OpenPath(arg1) {
+  return window['go']['main']['App']['OpenPath'](arg1);
 }
 
 export function Quit() {
   return window['go']['main']['App']['Quit']();
+}
+
+export function ResolveRelative(arg1) {
+  return window['go']['main']['App']['ResolveRelative'](arg1);
 }

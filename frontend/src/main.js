@@ -2,7 +2,7 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import './app.css';
 
-import {EditFile, GetDocument, OpenExternal, OpenFile, OpenRelative} from '../wailsjs/go/main/App';
+import {EditFile, GetDocument, OpenExternal, OpenFile, OpenPath, ResolveRelative} from '../wailsjs/go/main/App';
 import {EventsOn} from '../wailsjs/runtime/runtime';
 import {redrawDiagrams, renderDiagrams} from './diagrams';
 import {initKeys} from './keys';
@@ -16,6 +16,13 @@ const scheme = window.matchMedia('(prefers-color-scheme: dark)');
 
 let currentPath = '';
 let lastDoc;
+
+// Files left by following a link or opening another file, for H / L.
+const back = [];
+const forward = [];
+// Where to put the view once pending.path loads: at pending.anchor, or at
+// pending.scroll for a history move (which mustn't record itself again).
+let pending = null;
 
 // Sets data-theme on <html> from the settings (system follows the OS) and
 // picks the matching code colors.
@@ -32,6 +39,15 @@ function errorBanner(text) {
     return p;
 }
 
+function showError(text) {
+    content.prepend(errorBanner(text));
+    window.scrollTo(0, 0);
+}
+
+function scrollToAnchor(id) {
+    document.getElementById(decodeURIComponent(id))?.scrollIntoView();
+}
+
 async function load() {
     const doc = await GetDocument();
     lastDoc = doc;
@@ -40,7 +56,13 @@ async function load() {
 
     // Keep the reading position on live reload, start at the top for a new file.
     const sameFile = doc.path === currentPath;
-    const scroll = sameFile ? window.scrollY : 0;
+    const target = pending?.path === doc.path ? pending : null;
+    if (target) pending = null;
+    if (!sameFile && currentPath && !target?.history) {
+        back.push({path: currentPath, scroll: window.scrollY});
+        forward.length = 0;
+    }
+    const scroll = sameFile ? window.scrollY : target?.scroll ?? 0;
     currentPath = doc.path;
 
     if (doc.error) {
@@ -54,7 +76,21 @@ async function load() {
     await renderDiagrams(content);
     await renderMath(content);
     window.scrollTo(0, scroll);
+    if (target?.anchor) scrollToAnchor(target.anchor);
     search.refresh(sameFile);
+}
+
+// H / L: reopen the file before or after this one, where it was left.
+function move(from, to) {
+    const entry = from.pop();
+    if (!entry) return;
+    to.push({path: currentPath, scroll: window.scrollY});
+    pending = {...entry, history: true};
+    OpenPath(entry.path).catch((err) => {
+        to.pop();
+        pending = null;
+        showError(`Could not open ${entry.path}: ${err}`);
+    });
 }
 
 // Links: external ones go to the system browser, #anchors scroll in place,
@@ -66,22 +102,25 @@ content.addEventListener('click', (e) => {
 
     const href = a.getAttribute('href');
     if (href.startsWith('#')) {
-        const target = document.getElementById(decodeURIComponent(href.slice(1)));
-        target?.scrollIntoView();
+        scrollToAnchor(href.slice(1));
     } else if (/^(https?|mailto):/i.test(href)) {
         OpenExternal(href);
     } else if (!/^[a-z][a-z0-9+.-]*:/i.test(href) && /\.(md|markdown|mdown|mkd)(#.*)?$/i.test(href)) {
-        OpenRelative(href).catch((err) => console.warn('katdown:', err));
+        const anchor = href.includes('#') ? href.slice(href.indexOf('#') + 1) : '';
+        ResolveRelative(href).then((path) => {
+            if (path === currentPath) return scrollToAnchor(anchor);
+            pending = {path, anchor};
+            return OpenPath(path);
+        }).catch((err) => console.warn('katdown:', err));
     }
 });
 
 initKeys({
     openFile: () => OpenFile(),
     reload: load,
-    edit: () => EditFile().catch((err) => {
-        content.prepend(errorBanner(`Could not start editor: ${err}`));
-        window.scrollTo(0, 0);
-    }),
+    edit: () => EditFile().catch((err) => showError(`Could not start editor: ${err}`)),
+    back: () => move(back, forward),
+    forward: () => move(forward, back),
 });
 
 // With theme = "system", follow the OS as it switches.
