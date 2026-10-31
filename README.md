@@ -116,6 +116,6 @@ The Windows build needs no extra toolchain; the target machine needs the WebView
 
 The Linux build uses GTK 3 with webkit2gtk-4.1. To build against GTK 4 and webkitgtk-6.0 instead (`libgtk-4-dev`, `libwebkitgtk-6.0-dev`), run `wails3 task build GTK=4`. webkit2gtk-4.0 is no longer supported.
 
-Product name, version and copyright for the Windows exe, installer and macOS bundle live in `build/config.yml`; after changing them run `wails3 task common:update:build-assets`.
+Product name, version and copyright for the Windows exe, installer and macOS bundle live in `build/config.yml`; after changing them run `wails3 task update-build-assets`.
 
 If the window is blank under WSLg or with some GPU drivers, try `WEBKIT_DISABLE_DMABUF_RENDERER=1 katdown file.md`.

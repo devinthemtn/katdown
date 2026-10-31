@@ -101,6 +101,24 @@ tasks:
       - sed "s|@EXE@|{{.WIN_INSTALL_DIR}}/katdown.exe|" build/windows/katdown-win.sh > {{.BIN_DIR}}/{{.WIN_WRAPPER}}
       - install -Dm755 {{.BIN_DIR}}/{{.WIN_WRAPPER}} "$HOME/.local/bin/{{.WIN_WRAPPER}}"
 
+  # Wails rewrites build/linux/nfpm/nfpm.yaml with GTK 4 package dependencies;
+  # with GTK=3 (the default) they are switched to the GTK 3 / webkit2gtk-4.1 ones.
+  update-build-assets:
+    desc: Regenerates build assets from build/config.yml (run after changing name, version or copyright)
+    cmds:
+      - task: common:update:build-assets
+      - cmd: |
+          [ "{{.GTK}}" = "3" ] || exit 0
+          sed -E -i.bak \
+            -e 's/^( +- )libgtk-4-1$/\1libgtk-3-0/' \
+            -e 's/^( +- )libwebkitgtk-6\.0-4$/\1libwebkit2gtk-4.1-0/' \
+            -e 's/^( +- )gtk4$/\1gtk3/' \
+            -e 's/^( +- )webkitgtk6\.0$/\1webkit2gtk4.1/' \
+            -e 's/^( +- )webkitgtk-6\.0$/\1webkit2gtk-4.1/' \
+            -e 's/^# Default dependencies for the GTK4 .*/# Dependencies for the GTK3 + WebKit2GTK 4.1 stack (katdown builds with -tags gtk3; set by update-build-assets in Taskfile.yml)/' \
+            build/linux/nfpm/nfpm.yaml
+          rm build/linux/nfpm/nfpm.yaml.bak
+
   setup:docker:
     summary: Builds Docker image for cross-compilation (~800MB download)
     cmds:
