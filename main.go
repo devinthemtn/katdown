@@ -26,8 +26,9 @@ var icon []byte
 func main() {
 	makeConfig := flag.Bool("makeconfig", false, "create config.toml with the default settings, then exit")
 	makeStyle := flag.Bool("makestyle", false, "create style.css with the default stylesheet, then exit")
+	rawHTML := flag.Bool("html", false, "render raw HTML in the document instead of dropping it; only for files you trust")
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-makeconfig] [-makestyle] [file.md]\n\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-makeconfig] [-makestyle] [file.md]\n\n")
 		flag.PrintDefaults()
 		if p, err := config.SettingsPath(); err == nil {
 			fmt.Fprintf(flag.CommandLine.Output(), "\nSettings:          %s\n", p)
@@ -78,7 +79,7 @@ func main() {
 		bg = &options.RGBA{R: 251, G: 251, B: 250, A: 255}
 	}
 
-	app := NewApp(path)
+	app := NewApp(path, *rawHTML)
 	err := wails.Run(&options.App{
 		Title:  "katdown",
 		Width:  settings.Window.Width,

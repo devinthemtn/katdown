@@ -36,6 +36,9 @@ var markdownFilter = []runtime.FileFilter{
 type App struct {
 	ctx context.Context
 
+	// rawHTML passes raw HTML in documents through to the page (-html).
+	rawHTML bool
+
 	mu      sync.Mutex
 	path    string
 	watcher *watch.Watcher
@@ -62,8 +65,8 @@ type CodeCSS struct {
 	Light string `json:"light"`
 }
 
-func NewApp(path string) *App {
-	return &App{path: path}
+func NewApp(path string, rawHTML bool) *App {
+	return &App{path: path, rawHTML: rawHTML}
 }
 
 func (a *App) startup(ctx context.Context) {
@@ -151,7 +154,7 @@ func (a *App) GetDocument() Document {
 		doc.Error = err.Error()
 		return doc
 	}
-	html, err := render.Render(src, settings.HighlightPatterns())
+	html, err := render.Render(src, settings.HighlightPatterns(), a.rawHTML)
 	if err != nil {
 		doc.Error = err.Error()
 		return doc

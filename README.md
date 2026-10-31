@@ -2,18 +2,26 @@
 
 A small markdown viewer built with Go and [Wails](https://wails.io).
 
+I like a lot of developers am used to VIM style keybindings and might even like using terminal based editors, but whomever you are I bet you already have a favorite editor so I made this to be just a really good Markdown viewer so you get the best of all worlds.
+
 ```
-katdown [-makeconfig] [-makestyle] [file.md]
+katdown [-html] [-makeconfig] [-makestyle] [file.md]
 ```
 
 - `katdown notes.md` opens the file. It re-renders automatically when the file is saved.
 - `katdown` with no file shows a file picker; cancelling it quits.
+- `katdown -html notes.md` renders raw HTML in the document (`<details>`, `<kbd>`, `<img width=…>` and so on) instead of dropping it. Only use it on files you trust: HTML event handlers such as `onerror` can run script with access to katdown's file and editor functions.
 - `katdown -makeconfig` creates `~/.config/katdown/config.toml` (the standard config folder on each OS) with every setting at its default, then exits. katdown also does this by itself on first start.
 - `katdown -makestyle` creates `style.css` in the same folder containing the default stylesheet, then exits.
 
+## If you use linux through a windows computer using WSL/WSL2 in a mixed environment I got you.
+
+- 'katdown-win notes.md' opens the file with the windows installed version of katdown.
+- `katdown-win` with no file shows the windows file picker.
+
 Neither ever overwrites an existing file.
 
-Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. Raw HTML in documents is escaped.
+Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. Raw HTML in documents is dropped unless katdown is started with `-html`.
 
 ## Settings
 
@@ -101,4 +109,3 @@ The Windows build needs no extra toolchain; the target machine needs the WebView
 On distros that still ship `webkit2gtk-4.0`, run `make build TAGS=`.
 
 If the window is blank under WSLg or with some GPU drivers, try `WEBKIT_DISABLE_DMABUF_RENDERER=1 katdown file.md`.
-# katdown

@@ -8,7 +8,7 @@ import (
 
 func render(t *testing.T, src string) string {
 	t.Helper()
-	out, err := Render([]byte(src), nil)
+	out, err := Render([]byte(src), nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,6 +38,18 @@ func TestRenderEscapesRawHTML(t *testing.T) {
 	out := render(t, "hi\n\n<script>alert(1)</script>\n")
 	if strings.Contains(out, "<script>") {
 		t.Errorf("raw script tag was not escaped:\n%s", out)
+	}
+}
+
+func TestRenderRawHTML(t *testing.T) {
+	out, err := Render([]byte("hi <kbd>Ctrl</kbd>\n\n<details><summary>more</summary>\n\nbody\n\n</details>\n"), nil, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"<kbd>Ctrl</kbd>", "<details>", "<summary>more</summary>", "<p>body</p>"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output missing %q:\n%s", want, out)
+		}
 	}
 }
 
@@ -120,7 +132,7 @@ func TestRenderHighlight(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out, err := Render([]byte(tt.src), braces)
+			out, err := Render([]byte(tt.src), braces, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -140,7 +152,7 @@ func TestRenderHighlight(t *testing.T) {
 
 func TestRenderHighlightOverlapping(t *testing.T) {
 	res := []*regexp.Regexp{regexp.MustCompile(`TODO`), regexp.MustCompile(`TODO:? \w+`)}
-	out, err := Render([]byte("x TODO: fix y"), res)
+	out, err := Render([]byte("x TODO: fix y"), res, false)
 	if err != nil {
 		t.Fatal(err)
 	}
