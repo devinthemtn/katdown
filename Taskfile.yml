@@ -50,7 +50,7 @@ tasks:
   test:
     desc: Runs the Go tests
     cmds:
-      - go test ./internal/...
+      - go test -tags "{{.EXTRA_TAGS}}" ./...
 
   # Cross-compiles bin/katdown.exe (WebView2 needs no cgo, so no mingw toolchain required).
   build-windows:

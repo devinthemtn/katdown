@@ -10,7 +10,7 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 
 - `katdown notes.md` opens the file. It re-renders automatically when the file is saved.
 - `katdown` with no file shows a file picker; cancelling it quits.
-- `katdown -html notes.md` turns off HTML sanitizing, so scripts, `<style>`, inline styles and iframes in the document work too. Only use it on files you trust: script can reach katdown's file and editor functions. To make this the default, set `unsafe = true` under `[html]` in the [settings](#settings).
+- `katdown -html notes.md` turns off HTML sanitizing, so `<style>`, inline styles, iframes and event handlers such as `onclick` in the document work too. `<script>` tags are ignored and don't run. Only use it on files you trust: event handlers still run JavaScript, which can reach katdown's file and editor functions. To make this the default, set `unsafe = true` under `[html]` in the [settings](#settings).
 - `katdown -makeconfig` creates `~/.config/katdown/config.toml` (the standard config folder on each OS) with every setting at its default, then exits. katdown also does this by itself on first start.
 - `katdown -makestyle` creates `style.css` in the same folder containing the default stylesheet, then exits.
 
@@ -21,7 +21,7 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 
 Neither ever overwrites an existing file.
 
-Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. YAML front matter (a `---` block at the very top) is shown as a collapsed table instead of as text. Raw HTML in documents is sanitized: common tags such as `<details>`, `<kbd>`, `<sub>`, `<img width=…>` and `<p align="center">` work, while scripts, styles, event handlers and `javascript:` links are removed (start katdown with `-html` to keep everything).
+Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. YAML front matter (a `---` block at the very top) is shown as a collapsed table instead of as text. Raw HTML in documents is sanitized: common tags such as `<details>`, `<kbd>`, `<sub>`, `<img width=…>` and `<p align="center">` work, while scripts, styles, event handlers and `javascript:` links are removed (start katdown with `-html` to keep everything, though `<script>` tags still don't run).
 
 ## Install
 

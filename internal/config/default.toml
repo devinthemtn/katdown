@@ -47,7 +47,8 @@ command = ""
 
 [html]
 # true keeps all raw HTML in documents, like starting katdown with -html:
-# scripts, <style>, inline styles and iframes work. Only turn this on if you
-# trust every file you open, since script can reach katdown's file and editor
-# functions. false removes the unsafe parts.
+# <style>, inline styles, iframes and event handlers such as onclick work, but
+# <script> tags are ignored and don't run. Only turn this on if you trust every
+# file you open, since event handlers still run JavaScript, which can reach
+# katdown's file and editor functions. false removes the unsafe parts.
 unsafe = false
