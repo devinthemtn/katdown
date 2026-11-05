@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs the Windows katdown.exe from WSL, turning file arguments into Windows
-# paths. make install-windows fills in the exe path.
+# paths. wails3 task install-windows fills in the exe path.
 exe='@EXE@'
 args=()
 for a in "$@"; do

@@ -179,7 +179,7 @@ const debounce = (fn, ms) => {
 ```
 
 ```bash
-make build && ./build/bin/katdown demo.md
+wails3 task build && ./bin/katdown demo.md
 ```
 
 ```diff

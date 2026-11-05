@@ -10,7 +10,7 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 
 - `katdown notes.md` opens the file. It re-renders automatically when the file is saved.
 - `katdown` with no file shows a file picker; cancelling it quits.
-- `katdown -html notes.md` turns off HTML sanitizing, so scripts, `<style>`, inline styles and iframes in the document work too. Only use it on files you trust: script can reach katdown's file and editor functions.
+- `katdown -html notes.md` turns off HTML sanitizing, so scripts, `<style>`, inline styles and iframes in the document work too. Only use it on files you trust: script can reach katdown's file and editor functions. To make this the default, set `unsafe = true` under `[html]` in the [settings](#settings).
 - `katdown -makeconfig` creates `~/.config/katdown/config.toml` (the standard config folder on each OS) with every setting at its default, then exits. katdown also does this by itself on first start.
 - `katdown -makestyle` creates `style.css` in the same folder containing the default stylesheet, then exits.
 
@@ -22,6 +22,69 @@ katdown [-html] [-makeconfig] [-makestyle] [file.md]
 Neither ever overwrites an existing file.
 
 Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks), footnotes, syntax highlighting, [Mermaid](https://mermaid.js.org) diagrams and math (`$…$` inline, `$$…$$` on its own lines for display, rendered with [KaTeX](https://katex.org)). Mermaid and KaTeX are bundled, so everything renders offline. Like pandoc, `$5 and $10` stays plain text; write `\$` for a literal dollar sign. YAML front matter (a `---` block at the very top) is shown as a collapsed table instead of as text. Raw HTML in documents is sanitized: common tags such as `<details>`, `<kbd>`, `<sub>`, `<img width=…>` and `<p align="center">` work, while scripts, styles, event handlers and `javascript:` links are removed (start katdown with `-html` to keep everything).
+
+## Install
+
+katdown is installed by building it from source. Both ways below build the app and then:
+
+- copy the binary to `~/.local/bin/katdown` (make sure `~/.local/bin` is on your `PATH`)
+- put the icon at `~/.local/share/katdown/katdown.png`
+- add an app launcher entry at `~/.local/share/applications/katdown.desktop`
+
+`build` on its own only writes `bin/katdown` and doesn't copy anything; use `install` to put katdown on your system.
+
+### Requirements
+
+- Go 1.26+
+- Node and npm
+- The GTK 3 and WebKit dev packages. On Ubuntu 24.04:
+
+  ```
+  sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev
+  ```
+
+  `wails3 doctor` lists what's missing on other distros.
+
+Then get the source:
+
+```
+git clone https://github.com/devinthemtn/katdown.git
+cd katdown
+```
+
+### Install with the Wails CLI
+
+Install the Wails v3 CLI at the version in `go.mod`, with the `gtk3` tag the build uses:
+
+```
+go install -tags gtk3 github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+```
+
+Then build and install:
+
+```
+wails3 task install
+```
+
+`wails3 task` comes with its own copy of [Task](https://taskfile.dev), so you don't need to install go-task.
+
+### Install with go-task
+
+If you already have [go-task](https://taskfile.dev) (the `task` command), you can use it in place of `wails3 task`:
+
+```
+task install
+```
+
+The build still calls the `wails3` CLI to generate bindings and the `.desktop` file, so install it as well (see the `go install` command above).
+
+### Windows (from WSL)
+
+```
+wails3 task install-windows        # or: task install-windows
+```
+
+This cross-compiles `katdown.exe`, copies it to `%LOCALAPPDATA%\Programs\katdown`, adds a Start Menu shortcut and an `.md` Open with entry, and installs `katdown-win` in `~/.local/bin` for opening files from the WSL shell. See [Building](#building) for the standalone Windows installer.
 
 ## Settings
 
@@ -52,6 +115,9 @@ color = ""                     # CSS color; empty uses the theme's --highlight
 
 [editor]
 command = ""                   # editor for the e key, e.g. "code --wait"; empty uses $VISUAL
+
+[html]
+unsafe = false                 # true always keeps raw HTML, like -html; only if you trust every file
 ```
 
 By default, anything in `{curly braces}` is highlighted, which suits templates and placeholders. Add patterns to mark other words, e.g. `patterns = ['\{[^{}]+\}', '\bTODO\b']`, using single quotes so backslashes are kept. Code, math and URLs are never highlighted, and `\{x}` skips one occurrence.
@@ -91,22 +157,27 @@ Links: web links open in the system browser, relative `.md` links open in katdow
 
 ## Building
 
-Needs Go, Node/npm, the Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`) and the GTK/WebKit dev packages (`wails doctor` lists them).
+Needs the same tools as [Install](#install). The Wails CLI is pinned to v3.0.x because Wails drops GTK 3 in v3.1, so upgrading past it means switching to GTK 4.
+
+`wails3 task` runs the tasks in `Taskfile.yml` (a standalone [Task](https://taskfile.dev) works too: `task build`):
 
 ```
-make build                 # -> build/bin/katdown
-make dev FILE=README.md    # live-reloading dev mode
-make test
-make install               # copies to ~/.local/bin + app launcher entry
-make build-windows         # -> build/bin/katdown.exe (cross-compiled)
-make install-windows       # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
-make build-win-installer   # -> build/bin/katdown-amd64-installer.exe for Windows users (needs makensis)
+wails3 task build                  # -> bin/katdown
+wails3 task dev FILE=README.md     # live-reloading dev mode
+wails3 task test
+wails3 task install                # copies to ~/.local/bin + app launcher entry
+wails3 task build-windows          # -> bin/katdown.exe (cross-compiled)
+wails3 task install-windows        # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
+wails3 task build-win-installer    # -> bin/katdown-amd64-installer.exe for Windows users (needs makensis)
+wails3 task --list                 # everything else
 ```
 
 The Windows build needs no extra toolchain; the target machine needs the WebView2 runtime (preinstalled on Windows 10/11). The installer is the one to hand to Windows users: it installs per user without an admin prompt, adds Start Menu and desktop shortcuts and the `.md` Open with entry, and installs WebView2 if it is missing (that step needs internet). Uninstall from Settings → Apps. Windows won't let an app make itself the default for `.md`; after installing, right-click a `.md` file → Open with → katdown → Always.
 
-`make install-windows` also installs `katdown-win` in `~/.local/bin`, so `katdown-win notes.md` in the WSL shell opens the file in the Windows build (file arguments are converted with `wslpath -w`). Pick another name with `make install-windows WIN_WRAPPER=katdown`.
+`wails3 task install-windows` also installs `katdown-win` in `~/.local/bin`, so `katdown-win notes.md` in the WSL shell opens the file in the Windows build (file arguments are converted with `wslpath -w`). Pick another name with `wails3 task install-windows WIN_WRAPPER=katdown`.
 
-On distros that still ship `webkit2gtk-4.0`, run `make build TAGS=`.
+The Linux build uses GTK 3 with webkit2gtk-4.1. To build against GTK 4 and webkitgtk-6.0 instead (`libgtk-4-dev`, `libwebkitgtk-6.0-dev`), run `wails3 task build GTK=4`. webkit2gtk-4.0 is no longer supported.
+
+Product name, version and copyright for the Windows exe, installer and macOS bundle live in `build/config.yml`; after changing them run `wails3 task update-build-assets`.
 
 If the window is blank under WSLg or with some GPU drivers, try `WEBKIT_DISABLE_DMABUF_RENDERER=1 katdown file.md`.

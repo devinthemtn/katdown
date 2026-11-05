@@ -1,5 +1,7 @@
 // The `?` key overlay listing katdown's keys.
 
+import {Version} from '../bindings/katdown/app';
+
 const KEYS = [
     ['Move', [
         [['j', 'k'], 'scroll down / up'],
@@ -40,7 +42,10 @@ const panel = document.createElement('div');
 panel.className = 'panel';
 const title = document.createElement('h2');
 title.textContent = 'Keys';
-panel.append(title);
+const version = document.createElement('p');
+version.className = 'version';
+Version().then((v) => { version.textContent = `katdown ${v}`; }).catch(() => {});
+panel.append(title, version);
 
 // One table for all groups so the description column lines up.
 const table = document.createElement('table');

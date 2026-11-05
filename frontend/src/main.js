@@ -2,8 +2,8 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import './app.css';
 
-import {EditFile, GetDocument, OpenExternal, OpenFile, OpenPath, ResolveRelative} from '../wailsjs/go/main/App';
-import {EventsOn} from '../wailsjs/runtime/runtime';
+import {EditFile, GetDocument, OpenExternal, OpenFile, OpenPath, ResolveRelative} from '../bindings/katdown/app';
+import {Events} from '@wailsio/runtime';
 import {redrawDiagrams, renderDiagrams} from './diagrams';
 import {initKeys} from './keys';
 import {renderMath} from './math';
@@ -130,5 +130,5 @@ scheme.addEventListener('change', () => {
     redrawDiagrams();
 });
 
-EventsOn('doc:changed', load);
+Events.On('doc:changed', () => load());
 load();

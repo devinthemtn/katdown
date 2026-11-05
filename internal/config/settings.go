@@ -47,6 +47,9 @@ type Settings struct {
 	Editor struct {
 		Command string `toml:"command"` // empty: $VISUAL, then the OS default
 	} `toml:"editor"`
+	HTML struct {
+		Unsafe bool `toml:"unsafe"` // same as -html: don't sanitize raw HTML
+	} `toml:"html"`
 }
 
 type FontSettings struct {
