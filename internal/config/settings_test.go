@@ -172,3 +172,23 @@ func TestHighlightSettings(t *testing.T) {
 		t.Errorf("unsafe color accepted: %q, %v", s.Highlight.Color, err)
 	}
 }
+
+func TestParseSettingsTOCStyle(t *testing.T) {
+	if got := Defaults().TOC.Style; got != "overlay" {
+		t.Errorf("toc.style defaults to %q; want overlay", got)
+	}
+	s, err := ParseSettings("[toc]\nstyle = \"sidebar\"\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.TOC.Style != "sidebar" {
+		t.Errorf("toc.style = %q; want sidebar", s.TOC.Style)
+	}
+	s, err = ParseSettings("[toc]\nstyle = \"left\"\n")
+	if err == nil || !strings.Contains(err.Error(), "toc.style") {
+		t.Errorf("bad toc.style: err = %v; want a toc.style error", err)
+	}
+	if s.TOC.Style != "overlay" {
+		t.Errorf("bad toc.style kept %q; want the default", s.TOC.Style)
+	}
+}

@@ -52,6 +52,7 @@ type Document struct {
 	CSS       string  `json:"css"`
 	CustomCSS bool    `json:"customCss"`
 	Theme     string  `json:"theme"` // dark, light or system
+	TOC       string  `json:"toc"`   // overlay or sidebar
 	CodeCSS   CodeCSS `json:"codeCss"`
 	Error     string  `json:"error"`
 	// ConfigError describes a problem with config.toml; defaults were used
@@ -139,6 +140,7 @@ func (a *App) GetDocument() Document {
 		CSS:       css + "\n" + settings.CSSVars(),
 		CustomCSS: custom,
 		Theme:     settings.Theme,
+		TOC:       settings.TOC.Style,
 		CodeCSS:   CodeCSS{Dark: dark, Light: light},
 	}
 	if err != nil {

@@ -8,6 +8,7 @@ import {redrawDiagrams, renderDiagrams} from './diagrams';
 import {initKeys} from './keys';
 import {renderMath} from './math';
 import * as search from './search';
+import * as toc from './toc';
 
 const style = document.getElementById('doc-style');
 const codeStyle = document.getElementById('code-style');
@@ -52,6 +53,7 @@ async function load() {
     const doc = await GetDocument();
     lastDoc = doc;
     applyTheme(doc);
+    toc.setMode(doc.toc);
     style.textContent = doc.css;
 
     // Keep the reading position on live reload, start at the top for a new file.
@@ -78,6 +80,7 @@ async function load() {
     window.scrollTo(0, scroll);
     if (target?.anchor) scrollToAnchor(target.anchor);
     search.refresh(sameFile);
+    toc.refresh();
 }
 
 // H / L: reopen the file before or after this one, where it was left.

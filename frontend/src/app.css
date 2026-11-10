@@ -123,3 +123,45 @@ html, body {
     color: var(--fg-strong, #eef2f7);
     background: var(--accent-soft, rgba(122, 162, 247, 0.14));
 }
+
+/*
+ * toc.style = "sidebar": a panel on the left that stays open. The body is
+ * padded by --toc-width so the text column centers in the space beside it.
+ * .focused is set while the sidebar has the keyboard; .current marks the
+ * section at the top of the window.
+ */
+:where(body.katdown-toc-sidebar) {
+    padding-left: var(--toc-width, 18rem);
+}
+:where(#katdown-toc.sidebar) {
+    inset: 0 auto 0 0;
+    width: var(--toc-width, 18rem);
+    padding: 0;
+    align-items: stretch;
+    background: none;
+    backdrop-filter: none;
+}
+:where(#katdown-toc.sidebar) :where(.panel) {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 1.4rem 1.1rem 1.1rem;
+    border-width: 0 1px 0 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+:where(#katdown-toc.sidebar:not(.focused)) :where(.hint) {
+    display: none;
+}
+:where(#katdown-toc.sidebar:not(.focused) li.selected) {
+    color: inherit;
+    background: none;
+}
+:where(#katdown-toc.sidebar li.current) {
+    color: var(--accent, #7aa2f7);
+    box-shadow: inset 2px 0 0 var(--accent, #7aa2f7);
+}
+:where(#katdown-toc.sidebar:not(.focused) li.current) {
+    background: var(--surface-2, #1a202b);
+}
+

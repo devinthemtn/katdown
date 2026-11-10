@@ -18,6 +18,7 @@
  * @property {string} css
  * @property {boolean} customCss
  * @property {string} theme - dark, light or system
+ * @property {string} toc - overlay or sidebar
  * @property {CodeCSS} codeCss
  * @property {string} error
  * @property {string} configError - ConfigError describes a problem with config.toml; defaults were used for the affected settings.

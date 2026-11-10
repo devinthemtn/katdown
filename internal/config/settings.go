@@ -50,6 +50,9 @@ type Settings struct {
 	HTML struct {
 		Unsafe bool `toml:"unsafe"` // same as -html: don't sanitize raw HTML
 	} `toml:"html"`
+	TOC struct {
+		Style string `toml:"style"` // "overlay" or "sidebar"
+	} `toml:"toc"`
 }
 
 type FontSettings struct {
@@ -82,6 +85,7 @@ func Defaults() Settings {
 	s.Window.Width = 960
 	s.Window.Height = 900
 	s.Highlight.Patterns = []string{`\{[^{}]+\}`}
+	s.TOC.Style = "overlay"
 	return s
 }
 
@@ -189,6 +193,12 @@ func (s *Settings) validate() []error {
 	if c := s.Highlight.Color; c != "" && !cssColor.MatchString(c) {
 		bad("highlight.color", fmt.Sprintf("%q", c), `want a CSS color like "#e0af68" or "orange"`)
 		s.Highlight.Color = d.Highlight.Color
+	}
+	switch s.TOC.Style {
+	case "overlay", "sidebar":
+	default:
+		bad("toc.style", fmt.Sprintf("%q", s.TOC.Style), `want "overlay" or "sidebar"`)
+		s.TOC.Style = d.TOC.Style
 	}
 	return errs
 }

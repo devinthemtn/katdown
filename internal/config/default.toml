@@ -52,3 +52,9 @@ command = ""
 # file you open, since event handlers still run JavaScript, which can reach
 # katdown's file and editor functions. false removes the unsafe parts.
 unsafe = false
+
+[toc]
+# How t shows the table of contents: "overlay" is a box in the middle of the
+# window that closes after you jump; "sidebar" is a panel on the left that
+# stays open while you read and marks the section you're in.
+style = "overlay"

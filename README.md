@@ -118,6 +118,9 @@ command = ""                   # editor for the e key, e.g. "code --wait"; empty
 
 [html]
 unsafe = false                 # true always keeps raw HTML, like -html; only if you trust every file
+
+[toc]
+style = "overlay"              # or "sidebar": a panel on the left that stays open while you read
 ```
 
 By default, anything in `{curly braces}` is highlighted, which suits templates and placeholders. Add patterns to mark other words, e.g. `patterns = ['\{[^{}]+\}', '\bTODO\b']`, using single quotes so backslashes are kept. Code, math and URLs are never highlighted, and `\{x}` skips one occurrence.
@@ -130,7 +133,7 @@ The default look uses the bundled Inter and JetBrains Mono fonts, with a dark an
 
 If `style.css` exists in the config folder, it **replaces** the built-in style. Run `-makestyle` to get a full copy of the default to edit; delete the file to go back to the default. The palette is a set of CSS variables at the top of the file (Mermaid diagrams use them too), with the light palette under `:root[data-theme="light"]`. The settings still apply on top of a custom `style.css`: they set `data-theme` on `<html>`, the `--font-body`, `--font-mono`, `--font-size` and `--content-width` variables, and the code colors (which a `style.css` can override).
 
-Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents overlay), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words), `.katdown-frontmatter` (the front matter; `display: none` hides it).
+Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents; `#katdown-toc.sidebar` with `style = "sidebar"`, which pads `body.katdown-toc-sidebar` by `--toc-width`, default `18rem`), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words), `.katdown-frontmatter` (the front matter; `display: none` hides it).
 
 ## Keys
 
@@ -148,7 +151,7 @@ Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token cla
 | `Ctrl-o` | open another file |
 | `H` / `L` | back / forward between files (followed links, `Ctrl-o`) |
 | `Ctrl-r` | reload |
-| `t` | table of contents (`j`/`k` to move, `Enter` to jump) |
+| `t` | table of contents (`j`/`k` to move, `Enter` to jump); as a sidebar, `t` again focuses it, `t`/`Esc` hides it |
 | `]]` / `[[` | next / previous heading |
 | `?` | show / hide key help |
 | `q` | quit |
