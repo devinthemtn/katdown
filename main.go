@@ -24,10 +24,11 @@ var icon []byte
 func main() {
 	makeConfig := flag.Bool("makeconfig", false, "create config.toml with the default settings, then exit")
 	makeStyle := flag.Bool("makestyle", false, "create style.css with the default stylesheet, then exit")
+	updateConfig := flag.Bool("updateconfig", false, "add settings missing from an existing config.toml (e.g. new in this version) as comments, then exit")
 	rawHTML := flag.Bool("html", false, "don't sanitize raw HTML in the document (allows styles and event handlers; <script> tags don't run); only for files you trust")
 	showVersion := flag.Bool("version", false, "print the version, then exit")
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-makeconfig] [-makestyle] [-version] [file.md]\n\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-makeconfig] [-makestyle] [-updateconfig] [-version] [file.md]\n\n")
 		flag.PrintDefaults()
 		if p, err := config.SettingsPath(); err == nil {
 			fmt.Fprintf(flag.CommandLine.Output(), "\nSettings:          %s\n", p)
@@ -43,9 +44,12 @@ func main() {
 		return
 	}
 
-	if *makeConfig || *makeStyle {
+	if *makeConfig || *makeStyle || *updateConfig {
 		if *makeConfig {
 			writeConfigFile(config.MakeSettings)
+		}
+		if *updateConfig {
+			updateConfigFile()
 		}
 		if *makeStyle {
 			writeConfigFile(config.MakeStyle)
@@ -122,6 +126,25 @@ func writeConfigFile(write func() (string, bool, error)) {
 		fmt.Println("Wrote", path)
 	} else {
 		fmt.Println(path, "already exists, left untouched")
+	}
+}
+
+// updateConfigFile runs config.UpdateSettings and reports the result.
+func updateConfigFile() {
+	path, added, created, err := config.UpdateSettings()
+	switch {
+	case err != nil:
+		fmt.Fprintln(os.Stderr, "katdown:", err)
+		os.Exit(1)
+	case created:
+		fmt.Println("Wrote", path)
+	case len(added) == 0:
+		fmt.Println(path, "already has every setting")
+	default:
+		fmt.Printf("Added to %s as comments (uncomment to change):\n", path)
+		for _, name := range added {
+			fmt.Println("  " + name)
+		}
 	}
 }
 

@@ -15,6 +15,12 @@ vars:
   EXTRA_TAGS: '{{if eq .GTK "3"}}gtk3{{end}}'
   # Name of the WSL command that runs the Windows build (installed by install-windows).
   WIN_WRAPPER: katdown-win
+  # Version stamped into the binary (main.version) by the platform builds:
+  # "1.2.0" on a tag, "1.2.0-15-gea54352" past one, "-dirty" with uncommitted
+  # changes. Empty (keeping version.go's default) outside a git checkout.
+  # Override with `task build VERSION=...`.
+  VERSION:
+    sh: 'git describe --tags --always --dirty 2>/dev/null | sed "s/^v//" || true'
 
 includes:
   common: ./build/Taskfile.yml

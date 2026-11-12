@@ -5,13 +5,14 @@ A small markdown viewer built with Go and [Wails](https://wails.io).
 I like a lot of developers am used to VIM style keybindings and might even like using terminal based editors, but whomever you are I bet you already have a favorite editor so I made this to be just a really good Markdown viewer so you get the best of all worlds.
 
 ```
-katdown [-html] [-makeconfig] [-makestyle] [file.md]
+katdown [-html] [-makeconfig] [-makestyle] [-updateconfig] [file.md]
 ```
 
 - `katdown notes.md` opens the file. It re-renders automatically when the file is saved.
 - `katdown` with no file shows a file picker; cancelling it quits.
 - `katdown -html notes.md` turns off HTML sanitizing, so `<style>`, inline styles, iframes and event handlers such as `onclick` in the document work too. `<script>` tags are ignored and don't run. Only use it on files you trust: event handlers still run JavaScript, which can reach katdown's file and editor functions. To make this the default, set `unsafe = true` under `[html]` in the [settings](#settings).
 - `katdown -makeconfig` creates `~/.config/katdown/config.toml` (the standard config folder on each OS) with every setting at its default, then exits. katdown also does this by itself on first start.
+- `katdown -updateconfig` adds every setting your existing `config.toml` doesn't have (for example ones added in a newer katdown) as commented-out lines with their explanations, so you only need to uncomment and edit them. Your own settings and comments are left as they are; missing keys go into their `[table]`, and missing tables are added at the end with their `[table]` header already on. Running it again adds nothing new.
 - `katdown -makestyle` creates `style.css` in the same folder containing the default stylesheet, then exits.
 
 ## If you use linux through a windows computer using WSL/WSL2 in a mixed environment I got you.
