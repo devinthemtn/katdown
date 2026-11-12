@@ -7,3 +7,4 @@ build/linux/katdown.desktop
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 # Recreated by update-build-assets; katdown has no iOS build
 build/ios
+frontend/package.json.md5

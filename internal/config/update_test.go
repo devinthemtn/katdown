@@ -139,3 +139,25 @@ func TestUpdateSettingsMissingFile(t *testing.T) {
 		t.Error("missing config.toml was not created with the defaults")
 	}
 }
+
+// A table with no blank line before the next header: what is added to it must
+// not end up against that header, where the next update wouldn't see it.
+func TestUpdateSettingsTextNoBlankBeforeHeader(t *testing.T) {
+	for _, data := range []string{
+		"[font]\nsize = 18\n[window]\nwidth = 800\n",
+		"[font]\nsize = 18\n# window stuff\n[window]\nwidth = 800\n",
+	} {
+		first, _, err := UpdateSettingsText(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(first, "# mono = \"JetBrains Mono Variable\"\n[window]") ||
+			strings.Contains(first, "# mono = \"JetBrains Mono Variable\"\n# window stuff") {
+			t.Errorf("%q: added lines run into the next table:\n%s", data, first)
+		}
+		second, again, err := UpdateSettingsText(first)
+		if err != nil || len(again) != 0 || second != first {
+			t.Errorf("%q: second update added %v, err %v\n%s", data, again, err, second)
+		}
+	}
+}

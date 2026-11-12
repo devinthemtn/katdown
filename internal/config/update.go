@@ -215,8 +215,14 @@ func UpdateSettingsText(data string) (out string, added []string, err error) {
 
 	var b strings.Builder
 	for i := 0; i <= len(lines); i++ {
-		for _, l := range inserts[i] {
+		ins := inserts[i]
+		for _, l := range ins {
 			b.WriteString(l + "\n")
+		}
+		// Keep added lines apart from what follows: comments directly above a
+		// header count as the header's, so the next update would miss them.
+		if len(ins) > 0 && ins[len(ins)-1] != "" && i < len(lines) && strings.TrimSpace(lines[i]) != "" {
+			b.WriteString("\n")
 		}
 		if i < len(lines) {
 			b.WriteString(lines[i] + "\n")

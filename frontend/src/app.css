@@ -23,8 +23,11 @@ html, body {
     background: rgba(5, 7, 10, 0.6);
     backdrop-filter: blur(3px);
 }
-/* Help sits above the contents overlay, which can stay open as a sidebar. */
-:where(#katdown-help) {
+/*
+ * Help and the search bar sit above the contents overlay, which can stay open
+ * as a sidebar covering the left of the window.
+ */
+:where(#katdown-help, #katdown-cmdline) {
     z-index: 11;
 }
 :where(#katdown-help[hidden], #katdown-toc[hidden]) {
