@@ -167,6 +167,7 @@ Links: web links open in the system browser, relative `.md` links open in katdow
 | Command | Action |
 |---|---|
 | `:e` / `:o` / `:open [file]` | open a file, relative to the current one (`~/` is your home folder); with no file, the file dialog |
+| `:recent [file]` | list the files katdown has opened (newest first, also across restarts) and reopen one; typing filters by path |
 | `:h` / `:heading <text>` | jump to the first heading containing the text |
 | `:50%`, `:top`, `:bottom` | jump to that point in the document |
 | `:set theme=dark\|light\|system`, `:set toc=overlay\|sidebar`, `:set width=60rem` | change a setting until katdown closes (not saved; reloads keep it). `:set theme` shows the current value, `:set all` shows them all |

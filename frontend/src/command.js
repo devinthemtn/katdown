@@ -8,7 +8,7 @@
 // next. Up / Down before moving into the list recall earlier commands that
 // start with what's typed, like vim.
 
-import {ListFiles, Quit} from '../bindings/katdown/app';
+import {ListFiles, Quit, RecentFiles} from '../bindings/katdown/app';
 import * as help from './help';
 import * as search from './search';
 import * as toc from './toc';
@@ -58,6 +58,8 @@ const maxScroll = () => document.documentElement.scrollHeight - window.innerHeig
 const COMMANDS = [
     {names: ['open', 'e', 'o'], args: '[file]', desc: 'open a file; with none, the file dialog',
         complete: completeFile, run: (arg) => (arg ? A.openPath(arg) : A.openFile())},
+    {names: ['recent'], args: '[file]', desc: 'reopen a recently opened file',
+        complete: completeRecent, run: runRecent},
     {names: ['heading', 'h'], args: '<text>', desc: 'jump to a heading',
         complete: completeHeading, run: runHeading},
     {names: ['top'], desc: 'go to the top', run: () => scrollTo(0)},
@@ -154,6 +156,25 @@ async function completeFile(arg) {
     return (paths ?? []).map((p) => ({value: p, desc: p.endsWith('/') ? 'folder' : '', more: p.endsWith('/')}));
 }
 
+// Recent files whose path contains what was typed, shown by name and folder.
+async function completeRecent(arg) {
+    const t = arg.toLowerCase();
+    const paths = await RecentFiles().catch(() => []);
+    return (paths ?? [])
+        .filter((p) => p.toLowerCase().includes(t))
+        .map((p) => {
+            const i = Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\'));
+            return {value: p, label: p.slice(i + 1), desc: p.slice(0, i)};
+        });
+}
+
+async function runRecent(arg) {
+    if (arg) return A.openPath(arg);
+    const paths = await RecentFiles().catch(() => []);
+    if (!paths?.length) return {info: 'No recent files'};
+    return {input: 'recent '}; // reopen the window listing them
+}
+
 function runSet(arg) {
     const opts = A.options();
     if (!arg.includes('=')) {
@@ -225,7 +246,7 @@ async function suggest() {
         if (cmd?.complete) {
             const found = await cmd.complete(arg);
             if (n !== seq) return; // the text changed while this was loading
-            next = found.map((it) => ({...it, label: it.value, value: `${name} ${it.value}`}));
+            next = found.map((it) => ({...it, label: it.label ?? it.value, value: `${name} ${it.value}`}));
         }
     }
     items = next;
@@ -298,7 +319,8 @@ async function run(text, target) {
     if (t) remember(t);
     close();
     const result = await execute(t, target);
-    if (typeof result?.info === 'string') open('', result.info);
+    if (typeof result?.input === 'string') open(result.input);
+    else if (typeof result?.info === 'string') open('', result.info);
     else if (typeof result === 'string' && result) open(t, result, true);
 }
 

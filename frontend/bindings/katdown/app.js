@@ -94,6 +94,15 @@ export function Quit() {
 }
 
 /**
+ * RecentFiles returns the files katdown has opened, newest first, without the
+ * current one or any that no longer exist.
+ * @returns {$CancellablePromise<string[] | null>}
+ */
+export function RecentFiles() {
+    return $Call.ByID(1312256921);
+}
+
+/**
  * ResolveRelative returns the file a link such as "other.md#intro" points to,
  * relative to the current file's directory (a leading ~/ is the home folder,
  * for :e). The fragment is dropped; the

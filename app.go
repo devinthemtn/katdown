@@ -19,6 +19,7 @@ import (
 
 	"katdown/internal/config"
 	"katdown/internal/editor"
+	"katdown/internal/recent"
 	"katdown/internal/render"
 	"katdown/internal/watch"
 )
@@ -121,6 +122,22 @@ func (a *App) setFile(p string) {
 
 	a.window.SetTitle("katdown — " + filepath.Base(p))
 	a.wails.Event.Emit(docChanged)
+
+	if f, err := recent.Path(); err == nil {
+		if err := recent.Add(f, p); err != nil {
+			log.Printf("katdown: saving recent files: %v", err)
+		}
+	}
+}
+
+// RecentFiles returns the files katdown has opened, newest first, without the
+// current one or any that no longer exist.
+func (a *App) RecentFiles() []string {
+	f, err := recent.Path()
+	if err != nil {
+		return nil
+	}
+	return recent.List(f, a.currentPath())
 }
 
 func (a *App) currentPath() string {
