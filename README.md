@@ -134,7 +134,7 @@ The default look uses the bundled Inter and JetBrains Mono fonts, with a dark an
 
 If `style.css` exists in the config folder, it **replaces** the built-in style. Run `-makestyle` to get a full copy of the default to edit; delete the file to go back to the default. The palette is a set of CSS variables at the top of the file (Mermaid diagrams use them too), with the light palette under `:root[data-theme="light"]`. The settings still apply on top of a custom `style.css`: they set `data-theme` on `<html>`, the `--font-body`, `--font-mono`, `--font-size` and `--content-width` variables, and the code colors (which a `style.css` can override).
 
-Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents; `#katdown-toc.sidebar` with `style = "sidebar"`, which pads `body.katdown-toc-sidebar` by `--toc-width`, default `18rem`), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words), `.katdown-frontmatter` (the front matter; `display: none` hides it).
+Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-command` (the `:` window; `li.selected`, `.msg.error`), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents; `#katdown-toc.sidebar` with `style = "sidebar"`, which pads `body.katdown-toc-sidebar` by `--toc-width`, default `18rem`), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words), `.katdown-frontmatter` (the front matter; `display: none` hides it).
 
 ## Keys
 
@@ -154,10 +154,25 @@ Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token cla
 | `Ctrl-r` | reload |
 | `t` | table of contents (`j`/`k` to move, `Enter` to jump); as a sidebar, `t` again focuses it, `t`/`Esc` hides it |
 | `]]` / `[[` | next / previous heading |
+| `:` | command window (see [Commands](#commands)) |
 | `?` | show / hide key help |
 | `q` | quit |
 
 Links: web links open in the system browser, relative `.md` links open in katdown (`other.md#heading` scrolls to the heading), and `H` goes back to where you were.
+
+## Commands
+
+`:` opens a command window in the middle of the window. As you type, it lists matching commands, or the files, headings or settings a command takes. `Tab` / `Shift-Tab` (or `Ctrl-n` / `Ctrl-p`) move through the list and fill in the input. `Enter` runs the command, or on a folder, `set` or `theme=` fills it in and lists what comes next. `Up` / `Down` recall earlier commands that start with what you've typed. `Esc` closes the window. Like vim, any unique start of a name works (`:rel` for `:reload`), and errors are shown in the window.
+
+| Command | Action |
+|---|---|
+| `:e` / `:o` / `:open [file]` | open a file, relative to the current one (`~/` is your home folder); with no file, the file dialog |
+| `:h` / `:heading <text>` | jump to the first heading containing the text |
+| `:50%`, `:top`, `:bottom` | jump to that point in the document |
+| `:set theme=dark\|light\|system`, `:set toc=overlay\|sidebar`, `:set width=60rem` | change a setting until katdown closes (not saved; reloads keep it). `:set theme` shows the current value, `:set all` shows them all |
+| `:zoom [1.2 \| 120%]` | text size; with nothing, reset |
+| `:config`, `:style` | edit `config.toml` or `style.css` in your editor (`:style` creates it from the default first); `:reload` applies the changes |
+| `:reload`, `:edit`, `:toc`, `:help`, `:back`, `:forward`, `:noh`, `:q` | same as `Ctrl-r`, `e`, `t`, `?`, `H`, `L`, `Esc` (clear search) and `q` |
 
 ## Building
 

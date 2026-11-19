@@ -39,7 +39,7 @@ let current = -1;
 let lastG = 0;
 hint.textContent = HINTS[mode];
 
-const headingsNow = () => [...content.querySelectorAll(SELECTOR)];
+export const headingsNow = () => [...content.querySelectorAll(SELECTOR)];
 
 // Distance from the heading to where scrollIntoView puts it (its scroll-margin).
 const offset = (h) => h.getBoundingClientRect().top - (parseFloat(getComputedStyle(h).scrollMarginTop) || 0);
@@ -69,7 +69,7 @@ export function jump(dir) {
     }
 }
 
-const isVisible = () => !overlay.hidden;
+export const isVisible = () => !overlay.hidden;
 
 /** True while the contents have the keyboard. */
 export const isOpen = () => isVisible() && focused;
@@ -118,6 +118,12 @@ export function open() {
     setFocused(true);
     markCurrent();
     select(Math.max(currentIndex(headings), 0));
+}
+
+/** Shows the contents without giving them the keyboard (a sidebar stays put). */
+export function show() {
+    open();
+    if (mode === 'sidebar') setFocused(false);
 }
 
 export function close() {
@@ -170,6 +176,12 @@ function go(i) {
     if (mode === 'sidebar') setFocused(false);
     else close();
     headings[i]?.scrollIntoView();
+    markCurrent();
+}
+
+/** Scrolls to heading element h and marks it as the current section. */
+export function goTo(h) {
+    h.scrollIntoView();
     markCurrent();
 }
 

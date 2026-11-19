@@ -27,6 +27,7 @@ const KEYS = [
         [['Ctrl-o'], 'open another file'],
         [['H', 'L'], 'back / forward between files'],
         [['Ctrl-r'], 'reload'],
+        [[':'], 'command window (Tab completes)'],
         [['?'], 'toggle this help'],
         [['q'], 'quit'],
     ]],

@@ -2,10 +2,11 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import './app.css';
 
-import {EditFile, GetDocument, OpenExternal, OpenFile, OpenPath, ResolveRelative} from '../bindings/katdown/app';
+import {EditConfig, EditFile, GetDocument, OpenExternal, OpenFile, OpenPath, ResolveRelative} from '../bindings/katdown/app';
 import {Events} from '@wailsio/runtime';
 import {redrawDiagrams, renderDiagrams} from './diagrams';
-import {initKeys} from './keys';
+import * as command from './command';
+import {getZoom, initKeys, setZoom} from './keys';
 import {renderMath} from './math';
 import * as search from './search';
 import * as toc from './toc';
@@ -25,10 +26,22 @@ const forward = [];
 // pending.scroll for a history move (which mustn't record itself again).
 let pending = null;
 
+// Settings changed with :set for this session only; they win over config.toml
+// and survive reloads.
+const overrides = {};
+const OPTIONS = {
+    theme: ['dark', 'light', 'system'],
+    toc: ['overlay', 'sidebar'],
+    width: null, // any CSS length
+};
+
+const themeSetting = () => overrides.theme ?? lastDoc?.theme;
+
 // Sets data-theme on <html> from the settings (system follows the OS) and
 // picks the matching code colors.
 function applyTheme(doc) {
-    const dark = doc.theme === 'system' ? scheme.matches : doc.theme !== 'light';
+    const theme = overrides.theme ?? doc.theme;
+    const dark = theme === 'system' ? scheme.matches : theme !== 'light';
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     codeStyle.textContent = dark ? doc.codeCss.dark : doc.codeCss.light;
 }
@@ -53,8 +66,9 @@ async function load() {
     const doc = await GetDocument();
     lastDoc = doc;
     applyTheme(doc);
-    toc.setMode(doc.toc);
+    toc.setMode(overrides.toc ?? doc.toc);
     style.textContent = doc.css;
+    applyWidth();
 
     // Keep the reading position on live reload, start at the top for a new file.
     const sameFile = doc.path === currentPath;
@@ -81,6 +95,46 @@ async function load() {
     if (target?.anchor) scrollToAnchor(target.anchor);
     search.refresh(sameFile);
     toc.refresh();
+}
+
+function applyWidth() {
+    const root = document.documentElement.style;
+    if (overrides.width) root.setProperty('--content-width', overrides.width);
+    else root.removeProperty('--content-width');
+}
+
+// :set name=value. Returns an error message, or '' on success.
+function setOption(name, value) {
+    if (!(name in OPTIONS)) return `Unknown option: ${name}`;
+    const allowed = OPTIONS[name];
+    if (allowed && !allowed.includes(value)) return `${name} must be one of: ${allowed.join(', ')}`;
+    if (!allowed && !CSS.supports('width', value)) return `Not a CSS width: ${value}`;
+    overrides[name] = value;
+    if (name === 'theme' && lastDoc) {
+        applyTheme(lastDoc);
+        redrawDiagrams();
+    } else if (name === 'toc') {
+        const wasOpen = toc.isVisible();
+        toc.setMode(value);
+        if (wasOpen || value === 'sidebar') toc.show();
+    } else if (name === 'width') {
+        applyWidth();
+    }
+    return '';
+}
+
+// Opens the file at path (absolute, or relative to the current file) the same
+// way following a link does, so H comes back here.
+async function openPath(href) {
+    const path = await ResolveRelative(href);
+    if (path === currentPath) return;
+    pending = {path};
+    try {
+        await OpenPath(path);
+    } catch (err) {
+        pending = null;
+        throw err;
+    }
 }
 
 // H / L: reopen the file before or after this one, where it was left.
@@ -126,9 +180,28 @@ initKeys({
     forward: () => move(forward, back),
 });
 
+command.initCommands({
+    openFile: () => OpenFile(),
+    openPath,
+    reload: load,
+    edit: () => EditFile(),
+    editConfig: (which) => EditConfig(which),
+    back: () => move(back, forward),
+    forward: () => move(forward, back),
+    setOption,
+    options: () => Object.fromEntries(Object.keys(OPTIONS).map((k) => [k, {
+        values: OPTIONS[k],
+        current: k === 'theme' ? themeSetting()
+            : k === 'toc' ? overrides.toc ?? lastDoc?.toc
+                : overrides.width ?? getComputedStyle(document.documentElement).getPropertyValue('--content-width').trim(),
+    }])),
+    getZoom,
+    setZoom,
+});
+
 // With theme = "system", follow the OS as it switches.
 scheme.addEventListener('change', () => {
-    if (lastDoc?.theme !== 'system') return;
+    if (themeSetting() !== 'system') return;
     applyTheme(lastDoc);
     redrawDiagrams();
 });

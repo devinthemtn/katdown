@@ -1,5 +1,6 @@
 // Vim-style navigation.
 import {Quit} from '../bindings/katdown/app';
+import * as command from './command';
 import * as help from './help';
 import * as search from './search';
 import * as toc from './toc';
@@ -17,7 +18,8 @@ const ZOOM_STEP = 0.1;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 3;
 let zoom = 1;
-const setZoom = (z) => {
+export const getZoom = () => zoom;
+export const setZoom = (z) => {
     zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 10) / 10));
     document.body.style.fontSize = zoom === 1 ? '' : `calc(var(--font-size) * ${zoom})`;
 };
@@ -35,7 +37,8 @@ export function initKeys({openFile, reload, edit, back, forward}) {
     };
 
     window.addEventListener('keydown', (e) => {
-        if (search.isOpen()) return; // the search input handles its own keys
+        // The search and command inputs handle their own keys.
+        if (search.isOpen() || command.isOpen()) return;
         if (e.isComposing) return;
 
         // While help is up, only the keys that close it do anything.
@@ -92,6 +95,7 @@ export function initKeys({openFile, reload, edit, back, forward}) {
             case 't': toc.open(); break;
             case '/': search.open(); break;
             case '?': help.open(); break;
+            case ':': command.open(); break;
             case 'n': search.next(1); break;
             case 'N': search.next(-1); break;
             case 'Escape': search.clear(); break;

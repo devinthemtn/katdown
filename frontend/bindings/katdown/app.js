@@ -16,6 +16,17 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
+ * EditConfig opens config.toml ("config") or style.css ("style") in the
+ * user's editor. style.css is created from the default stylesheet first if it
+ * doesn't exist. Press Ctrl-r (or :reload) afterwards to apply the changes.
+ * @param {string} which
+ * @returns {$CancellablePromise<void>}
+ */
+export function EditConfig(which) {
+    return $Call.ByID(2278749819, which);
+}
+
+/**
  * EditFile opens the current file in the user's editor; see editor.Command.
  * The watcher reloads the view whenever the editor saves.
  * @returns {$CancellablePromise<void>}
@@ -31,6 +42,19 @@ export function EditFile() {
  */
 export function GetDocument() {
     return $Call.ByID(752209818);
+}
+
+/**
+ * ListFiles returns completions for a path typed in the :e command: the
+ * folders (with a trailing slash) and markdown files whose names start with
+ * what was typed after the last slash. A relative prefix is relative to the
+ * current file's folder, and a leading ~/ is the home folder. Each result is
+ * the prefix with the rest of the name added, so it can replace what was typed.
+ * @param {string} prefix
+ * @returns {$CancellablePromise<string[] | null>}
+ */
+export function ListFiles(prefix) {
+    return $Call.ByID(3557170708, prefix);
 }
 
 /**
@@ -71,7 +95,8 @@ export function Quit() {
 
 /**
  * ResolveRelative returns the file a link such as "other.md#intro" points to,
- * relative to the current file's directory. The fragment is dropped; the
+ * relative to the current file's directory (a leading ~/ is the home folder,
+ * for :e). The fragment is dropped; the
  * frontend scrolls to it once the file is shown.
  * @param {string} href
  * @returns {$CancellablePromise<string>}

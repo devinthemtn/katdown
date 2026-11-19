@@ -187,7 +187,8 @@ func (a *App) OpenFile() {
 }
 
 // ResolveRelative returns the file a link such as "other.md#intro" points to,
-// relative to the current file's directory. The fragment is dropped; the
+// relative to the current file's directory (a leading ~/ is the home folder,
+// for :e). The fragment is dropped; the
 // frontend scrolls to it once the file is shown.
 func (a *App) ResolveRelative(href string) (string, error) {
 	cur := a.currentPath()
@@ -197,6 +198,11 @@ func (a *App) ResolveRelative(href string) (string, error) {
 	target, err := url.PathUnescape(strings.SplitN(href, "#", 2)[0])
 	if err != nil {
 		return "", err
+	}
+	if rest, ok := strings.CutPrefix(target, "~/"); ok {
+		if home, err := os.UserHomeDir(); err == nil {
+			target = filepath.Join(home, filepath.FromSlash(rest))
+		}
 	}
 	if !filepath.IsAbs(target) {
 		target = filepath.Join(filepath.Dir(cur), filepath.FromSlash(target))
@@ -263,6 +269,106 @@ func (a *App) EditFile() error {
 	if p == "" {
 		return fmt.Errorf("no file open")
 	}
+	return editPath(p)
+}
+
+// EditConfig opens config.toml ("config") or style.css ("style") in the
+// user's editor. style.css is created from the default stylesheet first if it
+// doesn't exist. Press Ctrl-r (or :reload) afterwards to apply the changes.
+func (a *App) EditConfig(which string) error {
+	var p string
+	var err error
+	switch which {
+	case "config":
+		if _, _, err = config.MakeSettings(); err == nil {
+			p, err = config.SettingsPath()
+		}
+	case "style":
+		p, _, err = config.MakeStyle()
+	default:
+		return fmt.Errorf("unknown config file %q", which)
+	}
+	if err != nil {
+		return err
+	}
+	return editPath(p)
+}
+
+// ListFiles returns completions for a path typed in the :e command: the
+// folders (with a trailing slash) and markdown files whose names start with
+// what was typed after the last slash. A relative prefix is relative to the
+// current file's folder, and a leading ~/ is the home folder. Each result is
+// the prefix with the rest of the name added, so it can replace what was typed.
+func (a *App) ListFiles(prefix string) ([]string, error) {
+	dir := ""
+	if cur := a.currentPath(); cur != "" {
+		dir = filepath.Dir(cur)
+	} else if wd, err := os.Getwd(); err == nil {
+		dir = wd
+	}
+	home, _ := os.UserHomeDir()
+	return listFiles(prefix, dir, home)
+}
+
+// maxCompletions caps how many entries ListFiles returns.
+const maxCompletions = 100
+
+func listFiles(prefix, dir, home string) ([]string, error) {
+	typedDir, base := path.Split(filepath.ToSlash(prefix))
+	target := filepath.FromSlash(typedDir)
+	switch {
+	case typedDir == "~/" || strings.HasPrefix(typedDir, "~/"):
+		if home == "" {
+			return nil, fmt.Errorf("no home folder")
+		}
+		target = filepath.Join(home, filepath.FromSlash(typedDir[2:]))
+	case filepath.IsAbs(target):
+	default:
+		target = filepath.Join(dir, target)
+	}
+	entries, err := os.ReadDir(target)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, e := range entries {
+		name := e.Name()
+		if !strings.HasPrefix(name, base) {
+			continue
+		}
+		if strings.HasPrefix(name, ".") && !strings.HasPrefix(base, ".") {
+			continue
+		}
+		isDir := e.IsDir()
+		if e.Type()&os.ModeSymlink != 0 {
+			if fi, err := os.Stat(filepath.Join(target, name)); err == nil {
+				isDir = fi.IsDir()
+			}
+		}
+		switch {
+		case isDir:
+			out = append(out, typedDir+name+"/")
+		case isMarkdown(name):
+			out = append(out, typedDir+name)
+		}
+		if len(out) == maxCompletions {
+			break
+		}
+	}
+	return out, nil
+}
+
+// isMarkdown reports whether name has one of the extensions in markdownFilter.
+func isMarkdown(name string) bool {
+	switch strings.ToLower(filepath.Ext(name)) {
+	case ".md", ".markdown", ".mdown", ".mkd", ".txt":
+		return true
+	}
+	return false
+}
+
+// editPath opens p in the user's editor; see editor.Command.
+func editPath(p string) error {
 	settings, _ := config.LoadSettings()
 	cmd, err := editor.Command(settings.Editor.Command, p, editor.Env{
 		Getenv:   os.Getenv,
