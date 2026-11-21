@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	goruntime "runtime"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -27,8 +28,12 @@ import (
 // docChanged tells the frontend to fetch the document again.
 const docChanged = "doc:changed"
 
+// markdownExts are the extensions katdown lists in the file dialog and in :e
+// completion.
+var markdownExts = []string{".md", ".markdown", ".mdown", ".mkd", ".txt"}
+
 var markdownFilter = []application.FileFilter{
-	{DisplayName: "Markdown", Pattern: "*.md;*.markdown;*.mdown;*.mkd;*.txt"},
+	{DisplayName: "Markdown", Pattern: "*" + strings.Join(markdownExts, ";*")},
 	{DisplayName: "All files", Pattern: "*"},
 }
 
@@ -78,21 +83,29 @@ func (a *App) domReady() {
 	p := a.path
 	a.mu.Unlock()
 
-	if p != "" {
-		a.setFile(p)
-		return
+	if p == "" {
+		if p = a.pickFile(""); p == "" {
+			a.wails.Quit()
+			return
+		}
 	}
+	a.setFile(p)
+}
+
+// pickFile shows the open-file dialog starting in dir (empty: the dialog's
+// default) and returns the chosen file, or "" if it was cancelled.
+func (a *App) pickFile(dir string) string {
 	p, err := a.wails.Dialog.OpenFileWithOptions(&application.OpenFileDialogOptions{
 		Title:          "Open markdown file",
+		Directory:      dir,
 		CanChooseFiles: true,
 		Filters:        markdownFilter,
 		Window:         a.window,
 	}).PromptForSingleSelection()
-	if err != nil || p == "" {
-		a.wails.Quit()
-		return
+	if err != nil {
+		return ""
 	}
-	a.setFile(p)
+	return p
 }
 
 // ServiceShutdown is called by Wails when the app quits.
@@ -190,23 +203,15 @@ func (a *App) OpenFile() {
 	if p := a.currentPath(); p != "" {
 		dir = filepath.Dir(p)
 	}
-	p, err := a.wails.Dialog.OpenFileWithOptions(&application.OpenFileDialogOptions{
-		Title:          "Open markdown file",
-		Directory:      dir,
-		CanChooseFiles: true,
-		Filters:        markdownFilter,
-		Window:         a.window,
-	}).PromptForSingleSelection()
-	if err != nil || p == "" {
-		return
+	if p := a.pickFile(dir); p != "" {
+		a.setFile(p)
 	}
-	a.setFile(p)
 }
 
 // ResolveRelative returns the file a link such as "other.md#intro" points to,
 // relative to the current file's directory (a leading ~/ is the home folder,
-// for :e). The fragment is dropped; the
-// frontend scrolls to it once the file is shown.
+// for :e). The fragment is dropped; the frontend scrolls to it once the file
+// is shown.
 func (a *App) ResolveRelative(href string) (string, error) {
 	cur := a.currentPath()
 	if cur == "" {
@@ -244,11 +249,11 @@ func (a *App) OpenPath(p string) error {
 // no xdg-open, so the URL is handed to Windows to open in its default browser.
 func (a *App) OpenExternal(u string) {
 	if isWSL() {
-		if err := openWindows(u); err == nil {
+		err := openWindows(u)
+		if err == nil {
 			return
-		} else {
-			log.Printf("katdown: opening %s via Windows: %v", u, err)
 		}
+		log.Printf("katdown: opening %s via Windows: %v", u, err)
 	}
 	if err := a.wails.Browser.OpenURL(u); err != nil {
 		log.Printf("katdown: opening %s: %v", u, err)
@@ -377,11 +382,7 @@ func listFiles(prefix, dir, home string) ([]string, error) {
 
 // isMarkdown reports whether name has one of the extensions in markdownFilter.
 func isMarkdown(name string) bool {
-	switch strings.ToLower(filepath.Ext(name)) {
-	case ".md", ".markdown", ".mdown", ".mkd", ".txt":
-		return true
-	}
-	return false
+	return slices.Contains(markdownExts, strings.ToLower(filepath.Ext(name)))
 }
 
 // editPath opens p in the user's editor; see editor.Command.
