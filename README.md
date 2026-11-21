@@ -28,7 +28,7 @@ Supports GitHub-flavored markdown (tables, task lists, strikethrough, autolinks)
 
 katdown is installed by building it from source. Both ways below build the app and then:
 
-- copy the binary to `~/.local/bin/katdown` (make sure `~/.local/bin` is on your `PATH`)
+- copy the binary to `~/.local/bin/katdown` (make sure `~/.local/bin` is on your `PATH`), with a `katDown` symlink so either spelling works
 - put the icon at `~/.local/share/katdown/katdown.png`
 - add an app launcher entry at `~/.local/share/applications/katdown.desktop`
 

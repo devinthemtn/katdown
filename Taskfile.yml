@@ -76,11 +76,13 @@ tasks:
 
   # Also adds a launcher entry (build/linux/katdown.desktop.in) with the app icon.
   install:
-    desc: Installs katdown to ~/.local/bin with an app launcher entry
+    desc: Installs katdown (and a katDown alias) to ~/.local/bin with an app launcher entry
     platforms: [linux]
     deps: [build]
     cmds:
       - install -Dm755 {{.BIN_DIR}}/katdown "$HOME/.local/bin/katdown"
+      # katDown works too: a symlink, so it always runs the installed binary.
+      - ln -sfn katdown "$HOME/.local/bin/katDown"
       - install -Dm644 build/appicon.png "$HOME/.local/share/katdown/katdown.png"
       - sed -e "s|@BIN@|$HOME/.local/bin/katdown|" -e "s|@ICON@|$HOME/.local/share/katdown/katdown.png|" build/linux/katdown.desktop.in > {{.BIN_DIR}}/katdown.desktop
       - install -Dm644 {{.BIN_DIR}}/katdown.desktop "$HOME/.local/share/applications/katdown.desktop"
@@ -124,6 +126,12 @@ tasks:
             -e 's/^# Default dependencies for the GTK4 .*/# Dependencies for the GTK3 + WebKit2GTK 4.1 stack (katdown builds with -tags gtk3; set by update-build-assets in Taskfile.yml)/' \
             build/linux/nfpm/nfpm.yaml
           rm build/linux/nfpm/nfpm.yaml.bak
+      # Wails' regenerated nfpm.yaml lacks the katDown alias; add it back after the katdown binary.
+      - cmd: |
+          grep -q '/usr/local/bin/katDown' build/linux/nfpm/nfpm.yaml && exit 0
+          awk '{print} /dst: "\/usr\/local\/bin\/katdown"/ {print "  - src: \"katdown\"\n    dst: \"/usr/local/bin/katDown\"\n    type: symlink"}' \
+            build/linux/nfpm/nfpm.yaml > build/linux/nfpm/nfpm.yaml.tmp
+          mv build/linux/nfpm/nfpm.yaml.tmp build/linux/nfpm/nfpm.yaml
 
   setup:docker:
     summary: Builds Docker image for cross-compilation (~800MB download)

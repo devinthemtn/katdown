@@ -19,6 +19,9 @@ release: "1"
 contents:
   - src: "./bin/katdown"
     dst: "/usr/local/bin/katdown"
+  - src: "katdown"
+    dst: "/usr/local/bin/katDown"
+    type: symlink
   - src: "./build/appicon.png"
     dst: "/usr/share/icons/hicolor/128x128/apps/katdown.png"
   - src: "./build/linux/katdown.desktop"
