@@ -105,8 +105,8 @@ export function RecentFiles() {
 /**
  * ResolveRelative returns the file a link such as "other.md#intro" points to,
  * relative to the current file's directory (a leading ~/ is the home folder,
- * for :e). The fragment is dropped; the
- * frontend scrolls to it once the file is shown.
+ * for :e). The fragment is dropped; the frontend scrolls to it once the file
+ * is shown.
  * @param {string} href
  * @returns {$CancellablePromise<string>}
  */
