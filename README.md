@@ -5,7 +5,7 @@ A small markdown viewer built with Go and [Wails](https://wails.io).
 I like a lot of developers am used to VIM style keybindings and might even like using terminal based editors, but whomever you are I bet you already have a favorite editor so I made this to be just a really good Markdown viewer so you get the best of all worlds.
 
 ```
-katdown [-html] [-makeconfig] [-makestyle] [-updateconfig] [file.md]
+katdown [-html] [-makeconfig] [-makestyle] [-updateconfig] [-version] [file.md]
 ```
 
 - `katdown notes.md` opens the file. It re-renders automatically when the file is saved.
@@ -14,10 +14,11 @@ katdown [-html] [-makeconfig] [-makestyle] [-updateconfig] [file.md]
 - `katdown -makeconfig` creates `~/.config/katdown/config.toml` (the standard config folder on each OS) with every setting at its default, then exits. katdown also does this by itself on first start.
 - `katdown -updateconfig` adds every setting your existing `config.toml` doesn't have (for example ones added in a newer katdown) as commented-out lines with their explanations, so you only need to uncomment and edit them. Your own settings and comments are left as they are; missing keys go into their `[table]`, and missing tables are added at the end with their `[table]` header already on. Running it again adds nothing new.
 - `katdown -makestyle` creates `style.css` in the same folder containing the default stylesheet, then exits.
+- `katdown -version` prints the version, then exits.
 
 ## If you use linux through a windows computer using WSL/WSL2 in a mixed environment I got you.
 
-- 'katdown-win notes.md' opens the file with the windows installed version of katdown.
+- `katdown-win notes.md` opens the file with the windows installed version of katdown.
 - `katdown-win` with no file shows the windows file picker.
 
 Neither ever overwrites an existing file.
@@ -201,3 +202,7 @@ The Linux build uses GTK 3 with webkit2gtk-4.1. To build against GTK 4 and webki
 Product name, version and copyright for the Windows exe, installer and macOS bundle live in `build/config.yml`; after changing them run `wails3 task update-build-assets`.
 
 If the window is blank under WSLg or with some GPU drivers, try `WEBKIT_DISABLE_DMABUF_RENDERER=1 katdown file.md`.
+
+## License
+
+MIT; see [LICENSE](LICENSE). Changes in each release are in [CHANGELOG.md](CHANGELOG.md).
