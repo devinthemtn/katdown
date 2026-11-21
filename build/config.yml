@@ -11,7 +11,7 @@ info:
   description: "Markdown viewer" # The application description
   copyright: "Copyright 2026 Thomas Koefod" # Copyright text
   comments: "Markdown viewer" # Comments
-  version: "1.2.0" # The application version
+  version: "2.0.0" # The application version
 
 # Dev mode configuration
 dev_mode:

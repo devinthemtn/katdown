@@ -6,7 +6,9 @@ const KEYS = [
     ['Move', [
         [['j', 'k'], 'scroll down / up'],
         [['d', 'u'], 'half page down / up'],
-        [['Space', 'b'], 'page down / up'],
+        [['Space', 'f'], 'page down'],
+        [['b'], 'page up'],
+        [['Ctrl-d', 'Ctrl-u', 'Ctrl-f', 'Ctrl-b'], 'same as d u f b'],
         [['gg', 'G'], 'top / bottom'],
     ]],
     ['View', [
