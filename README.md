@@ -184,7 +184,7 @@ Needs the same tools as [Install](#install). The Wails CLI is pinned to v3.0.x b
 ```
 wails3 task build                  # -> bin/katdown
 wails3 task dev FILE=README.md     # live-reloading dev mode
-wails3 task test
+wails3 task test                   # Go and frontend tests (test:go, test:frontend for one)
 wails3 task install                # copies to ~/.local/bin + app launcher entry
 wails3 task build-windows          # -> bin/katdown.exe (cross-compiled)
 wails3 task install-windows        # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win

@@ -8,4 +8,9 @@ export default defineConfig({
         strictPort: true,
     },
     plugins: [wails('./bindings')],
+    test: {
+        environment: 'happy-dom',
+        setupFiles: ['./test/setup.js'],
+        include: ['test/**/*.test.js'],
+    },
 });

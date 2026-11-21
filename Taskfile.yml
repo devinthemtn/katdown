@@ -54,9 +54,22 @@ tasks:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
   test:
+    desc: Runs the Go and frontend tests
+    cmds:
+      - task: test:go
+      - task: test:frontend
+
+  test:go:
     desc: Runs the Go tests
     cmds:
       - go test -tags "{{.EXTRA_TAGS}}" ./...
+
+  test:frontend:
+    desc: Runs the frontend tests (Vitest)
+    deps: [common:install:frontend:deps]
+    dir: frontend
+    cmds:
+      - npm test
 
   # Cross-compiles bin/katdown.exe (WebView2 needs no cgo, so no mingw toolchain required).
   build-windows:
