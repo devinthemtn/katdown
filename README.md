@@ -82,6 +82,8 @@ The build still calls the `wails3` CLI to generate bindings and the `.desktop` f
 
 ### Windows (from WSL)
 
+In WSL, `install` also installs the Windows build, so one command keeps both up to date. Use `wails3 task install WINDOWS=false` for the Linux build only, or install just the Windows one with:
+
 ```
 wails3 task install-windows        # or: task install-windows
 ```
@@ -186,7 +188,7 @@ Needs the same tools as [Install](#install). The Wails CLI is pinned to v3.0.x b
 wails3 task build                  # -> bin/katdown
 wails3 task dev FILE=README.md     # live-reloading dev mode
 wails3 task test                   # Go and frontend tests (test:go, test:frontend for one)
-wails3 task install                # copies to ~/.local/bin + app launcher entry
+wails3 task install                # copies to ~/.local/bin + app launcher entry (in WSL, also runs install-windows)
 wails3 task build-windows          # -> bin/katdown.exe (cross-compiled)
 wails3 task install-windows        # from WSL: copies to %LOCALAPPDATA%\Programs\katdown + Start Menu shortcut, .md handler, ~/.local/bin/katdown-win
 wails3 task build-win-installer    # -> bin/katdown-amd64-installer.exe for Windows users (needs makensis)

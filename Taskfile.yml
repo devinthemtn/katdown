@@ -88,10 +88,16 @@ tasks:
           INSTALL_SCOPE: user
 
   # Also adds a launcher entry (build/linux/katdown.desktop.in) with the app icon.
+  # In WSL it then runs install-windows too, so the Windows copy stays in step;
+  # skip that with `task install WINDOWS=false`.
   install:
-    desc: Installs katdown (and a katDown alias) to ~/.local/bin with an app launcher entry
+    desc: Installs katdown (and a katDown alias) to ~/.local/bin with an app launcher entry; in WSL, also the Windows build
     platforms: [linux]
     deps: [build]
+    vars:
+      WINDOWS: '{{.WINDOWS | default "auto"}}'
+      IN_WSL:
+        sh: '[ -n "$WSL_DISTRO_NAME" ] || grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null && echo true || echo false'
     cmds:
       - install -Dm755 {{.BIN_DIR}}/katdown "$HOME/.local/bin/katdown"
       # katDown works too: a symlink, so it always runs the installed binary.
@@ -101,6 +107,8 @@ tasks:
       - install -Dm644 {{.BIN_DIR}}/katdown.desktop "$HOME/.local/share/applications/katdown.desktop"
       - cmd: update-desktop-database -q "$HOME/.local/share/applications" 2>/dev/null
         ignore_error: true
+      - task: install-windows
+        if: '{{if eq .WINDOWS "false"}}false{{else if eq .WINDOWS "true"}}true{{else}}{{.IN_WSL}}{{end}}'
 
   # From WSL: copies katdown.exe to %LOCALAPPDATA%\Programs\katdown, then adds a
   # Start Menu shortcut and registers it for .md files (build/windows/install.ps1),

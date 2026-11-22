@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- In WSL, `task install` also installs the Windows build (`install-windows`). Skip it with `task install WINDOWS=false`.
+
 ## 2.0.0 — 2026-11-21
 
 ### Upgrading from 1.x
