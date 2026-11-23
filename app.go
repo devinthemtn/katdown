@@ -45,6 +45,8 @@ type App struct {
 
 	// rawHTML passes raw HTML in documents through to the page (-html).
 	rawHTML bool
+	// scripts runs <script> tags in documents (-scripts); it implies rawHTML.
+	scripts bool
 
 	mu      sync.Mutex
 	path    string
@@ -62,6 +64,8 @@ type Document struct {
 	TOC       string  `json:"toc"`   // overlay or sidebar
 	CodeCSS   CodeCSS `json:"codeCss"`
 	Error     string  `json:"error"`
+	// Scripts tells the frontend to run the document's <script> tags.
+	Scripts bool `json:"scripts"`
 	// ConfigError describes a problem with config.toml; defaults were used
 	// for the affected settings.
 	ConfigError string `json:"configError"`
@@ -73,8 +77,24 @@ type CodeCSS struct {
 	Light string `json:"light"`
 }
 
-func NewApp(path string, rawHTML bool) *App {
-	return &App{path: path, rawHTML: rawHTML}
+func NewApp(path string, rawHTML, scripts bool) *App {
+	return &App{path: path, rawHTML: rawHTML || scripts, scripts: scripts}
+}
+
+// scriptsWarning is added to the window title while -scripts is on, so it is
+// always clear that the document can run code.
+const scriptsWarning = " — ⚠ scripts enabled"
+
+// title is the window title for the file named name ("" for none).
+func (a *App) title(name string) string {
+	t := "katdown"
+	if name != "" {
+		t += " — " + name
+	}
+	if a.scripts {
+		t += scriptsWarning
+	}
+	return t
 }
 
 // domReady runs once the page has loaded: it shows the file from the command
@@ -134,7 +154,7 @@ func (a *App) setFile(p string) {
 	a.watcher = w
 	a.mu.Unlock()
 
-	a.window.SetTitle("katdown — " + filepath.Base(p))
+	a.window.SetTitle(a.title(filepath.Base(p)))
 	a.wails.Event.Emit(docChanged)
 
 	if f, err := recent.Path(); err == nil {
@@ -173,6 +193,7 @@ func (a *App) GetDocument() Document {
 		Theme:     settings.Theme,
 		TOC:       settings.TOC.Style,
 		CodeCSS:   CodeCSS{Dark: dark, Light: light},
+		Scripts:   a.scripts,
 	}
 	if err != nil {
 		doc.ConfigError = err.Error()

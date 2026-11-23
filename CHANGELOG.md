@@ -4,6 +4,7 @@
 
 ### Added
 
+- `-scripts` flag: like `-html`, and also runs the document's `<script>` tags, for that session only. The window title shows "⚠ scripts enabled" while it's on.
 - mdsvex (`.svx`) files: Svelte `<script>` blocks are hidden, and images imported in them (`import pic from '$lib/…'`, used as `src={pic}`) show. `.svx` files are listed in the file dialog and `:e` completion, and `.svx` links open in katdown.
 
 ## 2.1.0 — 2026-11-22

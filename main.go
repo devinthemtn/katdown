@@ -26,9 +26,10 @@ func main() {
 	makeStyle := flag.Bool("makestyle", false, "create style.css with the default stylesheet, then exit")
 	updateConfig := flag.Bool("updateconfig", false, "add settings missing from an existing config.toml (e.g. new in this version) as comments, then exit")
 	rawHTML := flag.Bool("html", false, "don't sanitize raw HTML in the document (allows styles and event handlers; <script> tags don't run); only for files you trust")
+	scripts := flag.Bool("scripts", false, "like -html, and also run <script> tags in the document, for this session only; only for files you trust")
 	showVersion := flag.Bool("version", false, "print the version, then exit")
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-makeconfig] [-makestyle] [-updateconfig] [-version] [file.md]\n\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-scripts] [-makeconfig] [-makestyle] [-updateconfig] [-version] [file.md]\n\n")
 		flag.PrintDefaults()
 		if p, err := config.SettingsPath(); err == nil {
 			fmt.Fprintf(flag.CommandLine.Output(), "\nSettings:          %s\n", p)
@@ -87,7 +88,7 @@ func main() {
 		bg = application.NewRGB(251, 251, 250)
 	}
 
-	app := NewApp(path, *rawHTML)
+	app := NewApp(path, *rawHTML, *scripts)
 	app.wails = application.New(application.Options{
 		Name:     "katdown",
 		Icon:     icon,
@@ -100,7 +101,7 @@ func main() {
 		},
 	})
 	app.window = app.wails.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            "katdown",
+		Title:            app.title(""),
 		Width:            settings.Window.Width,
 		Height:           settings.Window.Height,
 		BackgroundColour: bg,
