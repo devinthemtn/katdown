@@ -21,6 +21,7 @@
  * @property {string} toc - overlay or sidebar
  * @property {CodeCSS} codeCss
  * @property {string} error
+ * @property {boolean} scripts - Scripts tells the frontend to run the document's <script> tags.
  * @property {string} configError - ConfigError describes a problem with config.toml; defaults were used for the affected settings.
  */
 

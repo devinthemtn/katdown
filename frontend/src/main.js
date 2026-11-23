@@ -92,10 +92,24 @@ async function load() {
 
     await renderDiagrams(content);
     await renderMath(content);
+    if (doc.scripts && !doc.error) runScripts(content);
     window.scrollTo(0, scroll);
     if (target?.anchor) scrollToAnchor(target.anchor);
     search.refresh(sameFile);
     toc.refresh();
+}
+
+// Scripts put in with innerHTML never run, so with -scripts each one is
+// replaced by a fresh copy, which the webview runs. They run in document order
+// (src= ones too), and again on every reload of the document.
+function runScripts(root) {
+    for (const old of root.querySelectorAll('script')) {
+        const s = document.createElement('script');
+        for (const {name, value} of old.attributes) s.setAttribute(name, value);
+        if (s.src) s.async = false;
+        s.textContent = old.textContent;
+        old.replaceWith(s);
+    }
 }
 
 // The page lives at /, so a src such as ../assets/pic.png would resolve

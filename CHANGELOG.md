@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `-scripts` flag: like `-html`, and also runs the document's `<script>` tags, for that session only. The window title shows "⚠ scripts enabled" while it's on.
+
 ## 2.1.0 — 2026-11-22
 
 ### Fixed

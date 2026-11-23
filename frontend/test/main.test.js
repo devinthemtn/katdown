@@ -71,6 +71,32 @@ describe('loading', () => {
         expect(document.documentElement.dataset.theme).toBe('dark');
     });
 
+    // happy-dom doesn't run scripts, so check that each one is swapped for a
+    // freshly created copy, which a real webview runs.
+    it('recreates <script> tags only with -scripts', async () => {
+        files['/d/c.md'] = '<p>c</p><script type="module" data-x="1">window.x = 1</script>';
+        current = '/d/c.md';
+        const create = vi.spyOn(document, 'createElement');
+        const made = () => create.mock.results.filter((_, i) => create.mock.calls[i][0] === 'script').map((r) => r.value);
+        try {
+            changed();
+            await settle();
+            expect(made()).toHaveLength(0);
+
+            docExtra = {scripts: true};
+            changed();
+            await settle();
+            const s = content.querySelector('script');
+            expect(made()).toEqual([s]);
+            expect(s.getAttribute('type')).toBe('module');
+            expect(s.dataset.x).toBe('1');
+            expect(s.textContent).toBe('window.x = 1');
+        } finally {
+            create.mockRestore();
+            files['/d/c.md'] = '<p>c</p>';
+        }
+    });
+
     it('re-renders on doc:changed', async () => {
         files['/d/a.md'] += '<p>new</p>';
         changed();

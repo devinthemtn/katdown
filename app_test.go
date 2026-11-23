@@ -90,12 +90,12 @@ func TestResolveRelative(t *testing.T) {
 	})
 	t.Setenv("HOME", home)
 
-	a := NewApp("", false)
+	a := NewApp("", false, false)
 	if _, err := a.ResolveRelative("other.md"); err == nil {
 		t.Error("with no file open: want an error")
 	}
 
-	a = NewApp(filepath.Join(dir, "doc.md"), false)
+	a = NewApp(filepath.Join(dir, "doc.md"), false, false)
 	tests := []struct{ href, want string }{
 		{"other.md", "other.md"},
 		{"other.md#intro", "other.md"},
@@ -132,7 +132,7 @@ func TestGetDocument(t *testing.T) {
 	doc := filepath.Join(dir, "doc.md")
 
 	t.Run("no file", func(t *testing.T) {
-		d := NewApp("", false).GetDocument()
+		d := NewApp("", false, false).GetDocument()
 		if d.Path != "" || d.HTML != "" || d.Error != "" {
 			t.Errorf("got %+v, want only settings", d)
 		}
@@ -142,7 +142,7 @@ func TestGetDocument(t *testing.T) {
 	})
 
 	t.Run("sanitized", func(t *testing.T) {
-		d := NewApp(doc, false).GetDocument()
+		d := NewApp(doc, false, false).GetDocument()
 		if d.Error != "" || d.ConfigError != "" {
 			t.Fatalf("errors: %q, %q", d.Error, d.ConfigError)
 		}
@@ -158,13 +158,23 @@ func TestGetDocument(t *testing.T) {
 	})
 
 	t.Run("-html", func(t *testing.T) {
-		if d := NewApp(doc, true).GetDocument(); !strings.Contains(d.HTML, "onclick") {
+		if d := NewApp(doc, true, false).GetDocument(); !strings.Contains(d.HTML, "onclick") {
 			t.Errorf("onclick removed with -html: %s", d.HTML)
 		}
 	})
 
+	t.Run("-scripts", func(t *testing.T) {
+		d := NewApp(doc, false, true).GetDocument()
+		if !d.Scripts || !strings.Contains(d.HTML, "onclick") {
+			t.Errorf("-scripts: want Scripts and raw HTML, got %v %s", d.Scripts, d.HTML)
+		}
+		if NewApp(doc, true, false).GetDocument().Scripts {
+			t.Error("-html alone must not run scripts")
+		}
+	})
+
 	t.Run("missing file", func(t *testing.T) {
-		if d := NewApp(filepath.Join(dir, "gone.md"), false).GetDocument(); d.Error == "" {
+		if d := NewApp(filepath.Join(dir, "gone.md"), false, false).GetDocument(); d.Error == "" {
 			t.Error("want an error for a missing file")
 		}
 	})
@@ -174,7 +184,7 @@ func TestGetDocument(t *testing.T) {
 			"katdown/config.toml": "theme = \"light\"\n[toc]\nstyle = \"nope\"\n[html]\nunsafe = true\n",
 			"katdown/style.css":   "body { color: red }",
 		})
-		d := NewApp(doc, false).GetDocument()
+		d := NewApp(doc, false, false).GetDocument()
 		if d.Theme != "light" {
 			t.Errorf("theme %q, want light", d.Theme)
 		}
@@ -199,7 +209,7 @@ func TestLocalFiles(t *testing.T) {
 		"docs/two words.txt": "spaced",
 		"secret.txt":         "secret",
 	})
-	a := NewApp(filepath.Join(root, "docs", "doc.md"), false)
+	a := NewApp(filepath.Join(root, "docs", "doc.md"), false, false)
 
 	tests := []struct {
 		method, target string
@@ -233,7 +243,7 @@ func TestLocalFiles(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	NewApp("", false).localFiles(w, httptest.NewRequest("GET", "/img.png", nil))
+	NewApp("", false, false).localFiles(w, httptest.NewRequest("GET", "/img.png", nil))
 	if w.Code != 404 {
 		t.Errorf("with no file open: status %d, want 404", w.Code)
 	}
@@ -322,10 +332,27 @@ func TestMediaRoute(t *testing.T) {
 	}
 
 	// localFiles routes mediaRoute to serveMedia.
-	a := NewApp(filepath.Join(dir, "day.md"), false)
+	a := NewApp(filepath.Join(dir, "day.md"), false, false)
 	w := httptest.NewRecorder()
 	a.localFiles(w, httptest.NewRequest("GET", mediaRoute+"?src=../assets/up.png", nil))
 	if w.Code != 200 || w.Body.String() != "up" {
 		t.Errorf("localFiles %s: %d %q", mediaRoute, w.Code, w.Body.String())
+	}
+}
+
+func TestTitle(t *testing.T) {
+	for _, c := range []struct {
+		scripts bool
+		name    string
+		want    string
+	}{
+		{false, "", "katdown"},
+		{false, "a.md", "katdown — a.md"},
+		{true, "", "katdown" + scriptsWarning},
+		{true, "a.md", "katdown — a.md" + scriptsWarning},
+	} {
+		if got := NewApp("", false, c.scripts).title(c.name); got != c.want {
+			t.Errorf("title(%q) scripts=%v = %q, want %q", c.name, c.scripts, got, c.want)
+		}
 	}
 }

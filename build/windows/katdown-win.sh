@@ -9,10 +9,10 @@ for a in "$@"; do
     args+=("$(wslpath -w "$(realpath "$a")")")
   else
     args+=("$a")
-    # Any flag but -html (-version, -makeconfig, -h, a typo, ...) prints
+    # Any flag but -html and -scripts (-version, -makeconfig, -h, a typo, ...) prints
     # something and exits instead of opening a window.
     case "$a" in
-      -html | --html | -html=* | --html=*) ;;
+      -html | --html | -html=* | --html=* | -scripts | --scripts | -scripts=* | --scripts=*) ;;
       -*) foreground=1 ;;
     esac
   fi
