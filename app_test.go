@@ -276,3 +276,56 @@ func TestWithFallback(t *testing.T) {
 		}
 	}
 }
+
+func TestMediaRoute(t *testing.T) {
+	root := t.TempDir()
+	home := filepath.Join(root, "home")
+	writeFiles(t, root, map[string]string{
+		"notes/journal/day.md":       "",
+		"notes/journal/here.png":     "here",
+		"notes/assets/up.png":        "up",
+		"notes/assets/two words.jpg": "spaced",
+		"notes/secret.txt":           "secret",
+		"home/pics/me.gif":           "home",
+		"notes/dir.png/x":            "",
+	})
+	dir := filepath.Join(root, "notes", "journal")
+	abs := filepath.ToSlash(filepath.Join(root, "notes", "assets", "up.png"))
+
+	tests := []struct {
+		src    string
+		status int
+		body   string
+	}{
+		{"here.png", 200, "here"},
+		{"../assets/up.png", 200, "up"},
+		{"../assets/two%20words.jpg", 200, "spaced"},
+		{"../assets/up.png?v=2#x", 200, "up"},
+		{"~/pics/me.gif", 200, "home"},
+		{abs, 200, "up"},
+		{"file://" + abs, 200, "up"},
+		{"../secret.txt", 404, ""},
+		{"../dir.png", 404, ""},
+		{"missing.png", 404, ""},
+		{"", 404, ""},
+	}
+	for _, tt := range tests {
+		r := httptest.NewRequest("GET", mediaRoute+"?src="+url.QueryEscape(tt.src), nil)
+		w := httptest.NewRecorder()
+		serveMedia(w, r, dir, home)
+		if w.Code != tt.status {
+			t.Errorf("%q: status %d, want %d", tt.src, w.Code, tt.status)
+		}
+		if tt.status == 200 && w.Body.String() != tt.body {
+			t.Errorf("%q: body %q, want %q", tt.src, w.Body.String(), tt.body)
+		}
+	}
+
+	// localFiles routes mediaRoute to serveMedia.
+	a := NewApp(filepath.Join(dir, "day.md"), false)
+	w := httptest.NewRecorder()
+	a.localFiles(w, httptest.NewRequest("GET", mediaRoute+"?src=../assets/up.png", nil))
+	if w.Code != 200 || w.Body.String() != "up" {
+		t.Errorf("localFiles %s: %d %q", mediaRoute, w.Code, w.Body.String())
+	}
+}

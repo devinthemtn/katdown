@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Local images outside the document's folder now show, such as `![](../assets/pic.png)`, as do absolute paths, `~/` paths and `file://` URLs. This also applies to `<video>` and `<audio>`. Only image, video and audio files are served from outside the document's folder.
+
 ### Changed
 
 - In WSL, `task install` also installs the Windows build (`install-windows`). Skip it with `task install WINDOWS=false`.

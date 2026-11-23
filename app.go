@@ -221,18 +221,24 @@ func (a *App) ResolveRelative(href string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if rest, ok := strings.CutPrefix(target, "~/"); ok {
-		if home, err := os.UserHomeDir(); err == nil {
-			target = filepath.Join(home, filepath.FromSlash(rest))
-		}
-	}
-	if !filepath.IsAbs(target) {
-		target = filepath.Join(filepath.Dir(cur), filepath.FromSlash(target))
-	}
+	home, _ := os.UserHomeDir()
+	target = resolveLocal(filepath.Dir(cur), target, home)
 	if _, err := os.Stat(target); err != nil {
 		return "", err
 	}
 	return target, nil
+}
+
+// resolveLocal turns target, a path from the document, into an absolute
+// path: a leading ~/ is home, and a relative path is relative to dir.
+func resolveLocal(dir, target, home string) string {
+	if rest, ok := strings.CutPrefix(target, "~/"); ok && home != "" {
+		return filepath.Join(home, filepath.FromSlash(rest))
+	}
+	if filepath.IsAbs(target) {
+		return filepath.Clean(target)
+	}
+	return filepath.Join(dir, filepath.FromSlash(target))
 }
 
 // OpenPath displays the file at p, an absolute path such as one returned by
@@ -436,6 +442,11 @@ func (a *App) localFiles(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	if r.URL.Path == mediaRoute {
+		home, _ := os.UserHomeDir()
+		serveMedia(w, r, filepath.Dir(cur), home)
+		return
+	}
 	root := filepath.Dir(cur)
 	rel := filepath.FromSlash(strings.TrimPrefix(path.Clean("/"+r.URL.Path), "/"))
 	full := filepath.Join(root, rel)
@@ -444,4 +455,65 @@ func (a *App) localFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.ServeFile(w, r, full)
+}
+
+// mediaRoute serves the images, video and audio a document refers to. The
+// frontend points each local src at mediaRoute?src=<original src>, because
+// the page lives at / and the webview would otherwise resolve a src such as
+// ../assets/pic.png against that rather than the document's folder.
+const mediaRoute = "/_katdown/media"
+
+// mediaExts are the file types mediaRoute serves. Unlike files next to the
+// document, these can be anywhere on disk, so nothing else is served: a page
+// opened with -html must not be able to read arbitrary files through it.
+var mediaExts = []string{
+	".apng", ".avif", ".bmp", ".gif", ".ico", ".jpeg", ".jpg", ".png", ".svg", ".webp",
+	".m4a", ".mov", ".mp3", ".mp4", ".oga", ".ogg", ".ogv", ".wav", ".webm",
+}
+
+// serveMedia serves the media file that the src query parameter names: a
+// path relative to dir, an absolute path, ~/path, or a file:// URL.
+func serveMedia(w http.ResponseWriter, r *http.Request, dir, home string) {
+	p, ok := mediaPath(r.URL.Query().Get("src"), dir, home)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	if fi, err := os.Stat(p); err != nil || fi.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+	http.ServeFile(w, r, p)
+}
+
+// mediaPath returns the file src refers to, and false if src is empty or not
+// one of mediaExts.
+func mediaPath(src, dir, home string) (string, bool) {
+	var target string
+	if len(src) > 7 && strings.EqualFold(src[:7], "file://") {
+		u, err := url.Parse(src)
+		if err != nil {
+			return "", false
+		}
+		target = u.Path
+		// file:///C:/pic.png has the path /C:/pic.png.
+		if len(target) > 2 && target[0] == '/' && target[2] == ':' {
+			target = target[1:]
+		}
+		target = filepath.FromSlash(target)
+	} else {
+		// Markdown URLs are percent-encoded and may carry ?query or #fragment.
+		raw := src
+		if i := strings.IndexAny(raw, "?#"); i >= 0 {
+			raw = raw[:i]
+		}
+		var err error
+		if target, err = url.PathUnescape(raw); err != nil {
+			return "", false
+		}
+	}
+	if target == "" || !slices.Contains(mediaExts, strings.ToLower(filepath.Ext(target))) {
+		return "", false
+	}
+	return resolveLocal(dir, target, home), true
 }

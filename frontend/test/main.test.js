@@ -85,6 +85,21 @@ describe('loading', () => {
         const banners = [...content.querySelectorAll('.katdown-error')].map((p) => p.textContent);
         expect(banners).toEqual(['config.toml: bad theme', 'Could not open /d/a.md: permission denied']);
     });
+
+    it('points local images and media at the media route', async () => {
+        files['/d/c.md'] = '<img src="../assets/a b.png"><img src="https://x.org/w.png"><img src="data:image/png;base64,AA==">'
+            + '<img src="file:///p/f.png"><img src="C:\\p\\w.png"><video poster="p.jpg"><source src="v.mp4"></video>';
+        current = '/d/c.md';
+        changed();
+        await settle();
+        const media = (src) => `/_katdown/media?src=${encodeURIComponent(src)}`;
+        expect([...content.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual([
+            media('../assets/a b.png'), 'https://x.org/w.png', 'data:image/png;base64,AA==',
+            media('file:///p/f.png'), media('C:\\p\\w.png'),
+        ]);
+        expect(content.querySelector('video').getAttribute('poster')).toBe(media('p.jpg'));
+        expect(content.querySelector('source').getAttribute('src')).toBe(media('v.mp4'));
+    });
 });
 
 describe('links', () => {

@@ -86,6 +86,7 @@ async function load() {
         content.append(errorBanner(`Could not open ${doc.path}: ${doc.error}`));
     } else {
         content.innerHTML = doc.html;
+        localizeMedia(content);
     }
     if (doc.configError) content.prepend(errorBanner(doc.configError));
 
@@ -95,6 +96,25 @@ async function load() {
     if (target?.anchor) scrollToAnchor(target.anchor);
     search.refresh(sameFile);
     toc.refresh();
+}
+
+// The page lives at /, so a src such as ../assets/pic.png would resolve
+// against that instead of the document's folder. Hand local srcs to the Go
+// side as they were written; it resolves them against the document's folder.
+// Web URLs, data: and blob: are left alone; file:// and Windows paths are local.
+function localizeMedia(root) {
+    for (const el of root.querySelectorAll('img[src], video[src], audio[src], source[src], video[poster]')) {
+        for (const attr of ['src', 'poster']) {
+            const src = el.getAttribute(attr);
+            if (src && isLocalSrc(src)) el.setAttribute(attr, `/_katdown/media?src=${encodeURIComponent(src)}`);
+        }
+    }
+}
+
+function isLocalSrc(src) {
+    if (src.startsWith('//') || src.startsWith('#')) return false;
+    if (/^file:/i.test(src) || /^[a-z]:[\\/]/i.test(src)) return true;
+    return !/^[a-z][a-z0-9+.-]*:/i.test(src);
 }
 
 function applyWidth() {
