@@ -47,6 +47,8 @@ func newMarkdown() goldmark.Markdown {
 func newPolicy() *bluemonday.Policy {
 	p := bluemonday.UGCPolicy()
 	p.RequireNoFollowOnLinks(false) // no search engine reads these pages
+	// <img src="file:///…">; the frontend serves it, and links never navigate.
+	p.AllowURLSchemes("file")
 	// chroma, mermaid, math, highlight and footnote classes; heading IDs.
 	p.AllowAttrs("class", "id").Globally()
 	// GFM task lists.
