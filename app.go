@@ -22,6 +22,7 @@ import (
 	"katdown/internal/editor"
 	"katdown/internal/recent"
 	"katdown/internal/render"
+	"katdown/internal/svx"
 	"katdown/internal/watch"
 )
 
@@ -30,7 +31,7 @@ const docChanged = "doc:changed"
 
 // markdownExts are the extensions katdown lists in the file dialog and in :e
 // completion.
-var markdownExts = []string{".md", ".markdown", ".mdown", ".mkd", ".txt"}
+var markdownExts = []string{".md", ".markdown", ".mdown", ".mkd", ".svx", ".txt"}
 
 var markdownFilter = []application.FileFilter{
 	{DisplayName: "Markdown", Pattern: "*" + strings.Join(markdownExts, ";*")},
@@ -208,6 +209,9 @@ func (a *App) GetDocument() Document {
 	if err != nil {
 		doc.Error = err.Error()
 		return doc
+	}
+	if svx.IsSvx(p) {
+		src = svx.Prepare(src, p)
 	}
 	html, err := render.Render(src, settings.HighlightPatterns(), a.rawHTML || settings.HTML.Unsafe)
 	if err != nil {

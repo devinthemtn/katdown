@@ -196,7 +196,7 @@ content.addEventListener('click', (e) => {
         scrollToAnchor(href.slice(1));
     } else if (/^(https?|mailto):/i.test(href)) {
         OpenExternal(href);
-    } else if (!/^[a-z][a-z0-9+.-]*:/i.test(href) && /\.(md|markdown|mdown|mkd)(#.*)?$/i.test(href)) {
+    } else if (!/^[a-z][a-z0-9+.-]*:/i.test(href) && /\.(md|markdown|mdown|mkd|svx)(#.*)?$/i.test(href)) {
         const anchor = href.includes('#') ? href.slice(href.indexOf('#') + 1) : '';
         ResolveRelative(href).then((path) => {
             if (path === currentPath) return scrollToAnchor(anchor);
