@@ -154,6 +154,73 @@ tasks:
             build/linux/nfpm/nfpm.yaml > build/linux/nfpm/nfpm.yaml.tmp
           mv build/linux/nfpm/nfpm.yaml.tmp build/linux/nfpm/nfpm.yaml
 
+  # Step 1 of a release, on a branch: sets the version in build/config.yml and
+  # version.go, regenerates the build assets from it, and dates the changelog's
+  # Unreleased section. Review, commit as "Release X.Y.Z", and merge the PR.
+  release:prepare:
+    desc: Bumps the version and dates the changelog for a release (RELEASE=X.Y.Z)
+    requires:
+      vars: [RELEASE]
+    vars:
+      DATE:
+        sh: date +%F
+    preconditions:
+      - sh: echo "{{.RELEASE}}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+        msg: "RELEASE must look like 2.2.0 (no leading v), got '{{.RELEASE}}'"
+      - sh: grep -q '^## Unreleased$' CHANGELOG.md
+        msg: "CHANGELOG.md has no '## Unreleased' section"
+      - sh: '! git rev-parse -q --verify "refs/tags/v{{.RELEASE}}" >/dev/null'
+        msg: "tag v{{.RELEASE}} already exists"
+    cmds:
+      - |
+        sed -E -i 's/^(  version: )"[^"]*"/\1"{{.RELEASE}}"/' build/config.yml
+      - sed -E -i 's/^var version = "[^"]*"/var version = "{{.RELEASE}}"/' version.go
+      - sed -i 's/^## Unreleased$/## {{.RELEASE}} — {{.DATE}}/' CHANGELOG.md
+      - task: update-build-assets
+      - git status --short
+
+  # Step 2, on main after the release PR is merged: tags the merge commit, builds
+  # the Linux binary, the Windows exe and the per-user installer stamped with the
+  # version, and publishes them with SHA256SUMS as a GitHub release whose notes
+  # are the version's CHANGELOG.md section. Needs makensis and an authed gh.
+  release:
+    desc: Tags main and publishes a GitHub release with Linux and Windows builds
+    platforms: [linux]
+    vars:
+      RELEASE:
+        sh: sed -n 's/^var version = "\(.*\)"/\1/p' version.go
+      TAG: 'v{{.RELEASE}}'
+      DIST: '{{.BIN_DIR}}/release'
+    preconditions:
+      - sh: '[ "$(git rev-parse --abbrev-ref HEAD)" = main ]'
+        msg: "not on main"
+      - sh: '[ -z "$(git status --porcelain)" ]'
+        msg: "working tree has uncommitted changes"
+      - sh: git fetch -q origin main && [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]
+        msg: "main is not in step with origin/main; pull or push first"
+      - sh: '! git rev-parse -q --verify "refs/tags/{{.TAG}}" >/dev/null'
+        msg: "tag {{.TAG}} already exists; run task release:prepare RELEASE=<next> first"
+      - sh: grep -q '^## {{.RELEASE}} ' CHANGELOG.md
+        msg: "CHANGELOG.md has no '## {{.RELEASE}} — date' section; run task release:prepare"
+      - sh: |
+          grep -q '^  version: "{{.RELEASE}}"' build/config.yml
+        msg: "build/config.yml's version doesn't match version.go ({{.RELEASE}})"
+      - sh: command -v makensis >/dev/null && gh auth status >/dev/null 2>&1
+        msg: "needs makensis and an authenticated gh"
+    cmds:
+      # VERSION is passed in, so the builds don't need the tag to exist yet and a
+      # failed build leaves no tag behind.
+      - '{{.TASK_EXE}} build build-win-installer VERSION={{.RELEASE}}'
+      - rm -rf {{.DIST}} && mkdir -p {{.DIST}}
+      - cp {{.BIN_DIR}}/katdown {{.DIST}}/katdown-linux-amd64
+      - cp {{.BIN_DIR}}/katdown.exe {{.DIST}}/katdown-windows-amd64.exe
+      - cp {{.BIN_DIR}}/katdown-amd64-installer.exe {{.DIST}}/katdown-windows-amd64-installer.exe
+      - cd {{.DIST}} && sha256sum katdown-* > SHA256SUMS
+      - awk '/^## /{if(p)exit} p; /^## {{.RELEASE}} /{p=1}' CHANGELOG.md > {{.DIST}}/NOTES.md
+      - git tag -a {{.TAG}} -m "katdown {{.RELEASE}}"
+      - git push origin {{.TAG}}
+      - gh release create {{.TAG}} --verify-tag --title "katdown {{.RELEASE}}" --notes-file {{.DIST}}/NOTES.md {{.DIST}}/katdown-* {{.DIST}}/SHA256SUMS
+
   setup:docker:
     summary: Builds Docker image for cross-compilation (~800MB download)
     cmds:
