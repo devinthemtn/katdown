@@ -27,9 +27,11 @@ func main() {
 	updateConfig := flag.Bool("updateconfig", false, "add settings missing from an existing config.toml (e.g. new in this version) as comments, then exit")
 	rawHTML := flag.Bool("html", false, "don't sanitize raw HTML in the document (allows styles and event handlers; <script> tags don't run); only for files you trust")
 	scripts := flag.Bool("scripts", false, "like -html, and also run <script> tags in the document, for this session only; only for files you trust")
-	showVersion := flag.Bool("version", false, "print the version, then exit")
+	var showVersion bool
+	flag.BoolVar(&showVersion, "version", false, "print the version, then exit")
+	flag.BoolVar(&showVersion, "v", false, "shorthand for -version")
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-scripts] [-makeconfig] [-makestyle] [-updateconfig] [-version] [file.md]\n\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: katdown [-html] [-scripts] [-makeconfig] [-makestyle] [-updateconfig] [-v | -version] [file.md]\n\n")
 		flag.PrintDefaults()
 		if p, err := config.SettingsPath(); err == nil {
 			fmt.Fprintf(flag.CommandLine.Output(), "\nSettings:          %s\n", p)
@@ -40,7 +42,7 @@ func main() {
 	}
 	flag.Parse()
 
-	if *showVersion {
+	if showVersion {
 		fmt.Println("katdown", version)
 		return
 	}
