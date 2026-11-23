@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- mdsvex (`.svx`) files: Svelte `<script>` blocks are hidden, and images imported in them (`import pic from '$lib/…'`, used as `src={pic}`) show. `.svx` files are listed in the file dialog and `:e` completion, and `.svx` links open in katdown.
+
 ## 2.1.0 — 2026-11-22
 
 ### Fixed

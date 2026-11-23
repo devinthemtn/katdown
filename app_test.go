@@ -71,13 +71,13 @@ func writeFiles(t *testing.T, dir string, files map[string]string) {
 func TestIsMarkdown(t *testing.T) {
 	for name, want := range map[string]bool{
 		"a.md": true, "A.MD": true, "a.markdown": true, "a.mdown": true, "a.mkd": true,
-		"a.txt": true, "a.png": false, "md": false, "a.md.bak": false, "": false,
+		"a.svx": true, "a.txt": true, "a.png": false, "md": false, "a.md.bak": false, "": false,
 	} {
 		if got := isMarkdown(name); got != want {
 			t.Errorf("isMarkdown(%q) = %v, want %v", name, got, want)
 		}
 	}
-	if got, want := markdownFilter[0].Pattern, "*.md;*.markdown;*.mdown;*.mkd;*.txt"; got != want {
+	if got, want := markdownFilter[0].Pattern, "*.md;*.markdown;*.mdown;*.mkd;*.svx;*.txt"; got != want {
 		t.Errorf("markdown filter pattern = %q, want %q", got, want)
 	}
 }
@@ -127,7 +127,10 @@ func TestGetDocument(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", cfg)
 	dir := t.TempDir()
 	writeFiles(t, dir, map[string]string{
-		"doc.md": "# Title\n\n<span onclick=\"x()\">hi</span>\n",
+		"doc.md":                  "# Title\n\n<span onclick=\"x()\">hi</span>\n",
+		"package.json":            "{}",
+		"src/lib/assets/pic.svg":  "<svg/>",
+		"src/lib/content/doc.svx": "<script>\n\timport pic from '$lib/assets/pic.svg';\n</script>\n\n<img src={pic} alt=\"p\" />\n",
 	})
 	doc := filepath.Join(dir, "doc.md")
 
@@ -160,6 +163,14 @@ func TestGetDocument(t *testing.T) {
 	t.Run("-html", func(t *testing.T) {
 		if d := NewApp(doc, true).GetDocument(); !strings.Contains(d.HTML, "onclick") {
 			t.Errorf("onclick removed with -html: %s", d.HTML)
+		}
+	})
+
+	t.Run("svx imports", func(t *testing.T) {
+		d := NewApp(filepath.Join(dir, "src", "lib", "content", "doc.svx"), false).GetDocument()
+		want := `src="` + filepath.ToSlash(filepath.Join(dir, "src", "lib", "assets", "pic.svg")) + `"`
+		if !strings.Contains(d.HTML, want) || strings.Contains(d.HTML, "import") {
+			t.Errorf("want %s and no script in: %s", want, d.HTML)
 		}
 	})
 
