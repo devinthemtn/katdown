@@ -158,24 +158,26 @@ tasks:
   # version.go, regenerates the build assets from it, and dates the changelog's
   # Unreleased section. Review, commit as "Release X.Y.Z", and merge the PR.
   release:prepare:
-    desc: Bumps the version and dates the changelog for a release (RELEASE=X.Y.Z)
+    desc: Bumps the version and dates the changelog for a release (RELEASE=X.Y.Z or vX.Y.Z)
     requires:
       vars: [RELEASE]
     vars:
+      # A leading v is fine: RELEASE=v2.2.0 and RELEASE=2.2.0 both work.
+      VER: '{{trimPrefix "v" .RELEASE}}'
       DATE:
         sh: date +%F
     preconditions:
-      - sh: echo "{{.RELEASE}}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
-        msg: "RELEASE must look like 2.2.0 (no leading v), got '{{.RELEASE}}'"
+      - sh: echo "{{.VER}}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+        msg: "RELEASE must look like 2.2.0 or v2.2.0, got '{{.RELEASE}}'"
       - sh: grep -q '^## Unreleased$' CHANGELOG.md
         msg: "CHANGELOG.md has no '## Unreleased' section"
-      - sh: '! git rev-parse -q --verify "refs/tags/v{{.RELEASE}}" >/dev/null'
-        msg: "tag v{{.RELEASE}} already exists"
+      - sh: '! git rev-parse -q --verify "refs/tags/v{{.VER}}" >/dev/null'
+        msg: "tag v{{.VER}} already exists"
     cmds:
       - |
-        sed -E -i 's/^(  version: )"[^"]*"/\1"{{.RELEASE}}"/' build/config.yml
-      - sed -E -i 's/^var version = "[^"]*"/var version = "{{.RELEASE}}"/' version.go
-      - sed -i 's/^## Unreleased$/## {{.RELEASE}} — {{.DATE}}/' CHANGELOG.md
+        sed -E -i 's/^(  version: )"[^"]*"/\1"{{.VER}}"/' build/config.yml
+      - sed -E -i 's/^var version = "[^"]*"/var version = "{{.VER}}"/' version.go
+      - sed -i 's/^## Unreleased$/## {{.VER}} — {{.DATE}}/' CHANGELOG.md
       - task: update-build-assets
       - git status --short
 
@@ -199,7 +201,7 @@ tasks:
       - sh: git fetch -q origin main && [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]
         msg: "main is not in step with origin/main; pull or push first"
       - sh: '! git rev-parse -q --verify "refs/tags/{{.TAG}}" >/dev/null'
-        msg: "tag {{.TAG}} already exists; run task release:prepare RELEASE=<next> first"
+        msg: "tag {{.TAG}} already exists, so version.go is still at the last release. Run task release:prepare RELEASE=<next> on a branch and merge it first"
       - sh: grep -q '^## {{.RELEASE}} ' CHANGELOG.md
         msg: "CHANGELOG.md has no '## {{.RELEASE}} — date' section; run task release:prepare"
       - sh: |
