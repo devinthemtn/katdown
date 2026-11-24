@@ -113,11 +113,15 @@ tasks:
   # From WSL: copies katdown.exe to %LOCALAPPDATA%\Programs\katdown, then adds a
   # Start Menu shortcut and registers it for .md files (build/windows/install.ps1),
   # and installs ~/.local/bin/$WIN_WRAPPER to run it from the WSL shell.
+  # If the install dir isn't on the Windows PATH it asks whether to add it
+  # (build/windows/path.ps1); answer up front with WIN_PATH=true or WIN_PATH=false.
   install-windows:
     desc: From WSL, installs katdown.exe for the Windows user, plus ~/.local/bin/katdown-win
     platforms: [linux]
     deps: [build-windows]
+    interactive: true
     vars:
+      WIN_PATH: '{{.WIN_PATH | default "ask"}}'
       # Windows install dir, resolved through WSL interop (empty outside WSL).
       WIN_INSTALL_DIR:
         sh: '{{if .WIN_INSTALL_DIR}}echo "{{.WIN_INSTALL_DIR}}"{{else}}command -v wslpath >/dev/null && d=$(cmd.exe /c echo %LOCALAPPDATA% 2>/dev/null | tr -d "\r") && [ -n "$d" ] && echo "$(wslpath "$d")/Programs/katdown" || true{{end}}'
@@ -127,6 +131,19 @@ tasks:
     cmds:
       - install -Dm755 {{.BIN_DIR}}/katdown.exe "{{.WIN_INSTALL_DIR}}/katdown.exe"
       - powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w build/windows/install.ps1)" -Exe "$(wslpath -w "{{.WIN_INSTALL_DIR}}/katdown.exe")"
+      - cmd: |
+          dir="$(wslpath -w "{{.WIN_INSTALL_DIR}}")"
+          path_ps() { powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w build/windows/path.ps1)" -Dir "$dir" -Mode "$1"; }
+          if path_ps check; then echo "$dir is on the Windows PATH"; exit 0; fi
+          case "{{.WIN_PATH}}" in
+            true) add=y ;;
+            false) add=n ;;
+            *) add=n; if [ -t 0 ]; then printf '%s is not on the Windows PATH. Add it? [y/N] ' "$dir"; read -r add || add=n; fi ;;
+          esac
+          case "$add" in
+            [yY]*) path_ps add && echo "Added $dir to the Windows PATH; open a new Windows terminal to use it" ;;
+            *) echo "Not added to the Windows PATH; to add it later: task install-windows WIN_PATH=true" ;;
+          esac
       - sed "s|@EXE@|{{.WIN_INSTALL_DIR}}/katdown.exe|" build/windows/katdown-win.sh > {{.BIN_DIR}}/{{.WIN_WRAPPER}}
       - install -Dm755 {{.BIN_DIR}}/{{.WIN_WRAPPER}} "$HOME/.local/bin/{{.WIN_WRAPPER}}"
 

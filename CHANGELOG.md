@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- The Windows installer asks whether to add katdown to your `PATH`, so you can run `katdown notes.md` from a terminal. Uninstalling removes it again. Silent installs (`/S`) leave `PATH` alone.
+- `task install-windows` (and `task install` in WSL) also checks whether katdown is on the Windows `PATH` and asks to add it. Answer up front with `WIN_PATH=true` or `WIN_PATH=false`.
+
 ## 2.1.2 — 2026-11-23
 
 ### Added

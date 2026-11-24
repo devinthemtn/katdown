@@ -89,7 +89,7 @@ In WSL, `install` also installs the Windows build, so one command keeps both up 
 wails3 task install-windows        # or: task install-windows
 ```
 
-This cross-compiles `katdown.exe`, copies it to `%LOCALAPPDATA%\Programs\katdown`, adds a Start Menu shortcut and an `.md` Open with entry, and installs `katdown-win` in `~/.local/bin` for opening files from the WSL shell. See [Building](#building) for the standalone Windows installer.
+This cross-compiles `katdown.exe`, copies it to `%LOCALAPPDATA%\Programs\katdown`, adds a Start Menu shortcut and an `.md` Open with entry, and installs `katdown-win` in `~/.local/bin` for opening files from the WSL shell. If that folder isn't on the Windows `PATH`, it asks whether to add it; answer up front with `WIN_PATH=true` or `WIN_PATH=false`. See [Building](#building) for the standalone Windows installer.
 
 ## Settings
 
@@ -196,7 +196,7 @@ wails3 task build-win-installer    # -> bin/katdown-amd64-installer.exe for Wind
 wails3 task --list                 # everything else
 ```
 
-The Windows build needs no extra toolchain; the target machine needs the WebView2 runtime (preinstalled on Windows 10/11). The installer is the one to hand to Windows users: it installs per user without an admin prompt, adds Start Menu and desktop shortcuts and the `.md` Open with entry, and installs WebView2 if it is missing (that step needs internet). Uninstall from Settings → Apps. Windows won't let an app make itself the default for `.md`; after installing, right-click a `.md` file → Open with → katdown → Always.
+The Windows build needs no extra toolchain; the target machine needs the WebView2 runtime (preinstalled on Windows 10/11). The installer is the one to hand to Windows users: it installs per user without an admin prompt, adds Start Menu and desktop shortcuts and the `.md` Open with entry, offers to add katdown to your `PATH` so `katdown notes.md` works in a terminal, and installs WebView2 if it is missing (that step needs internet). Uninstall from Settings → Apps. Windows won't let an app make itself the default for `.md`; after installing, right-click a `.md` file → Open with → katdown → Always.
 
 `wails3 task install-windows` also installs `katdown-win` in `~/.local/bin`, so `katdown-win notes.md` in the WSL shell opens the file in the Windows build (file arguments are converted with `wslpath -w`). Pick another name with `wails3 task install-windows WIN_WRAPPER=katdown`.
 

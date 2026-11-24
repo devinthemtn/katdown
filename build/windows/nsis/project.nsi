@@ -75,6 +75,17 @@ Unicode true
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
 !macroend
 
+# Adds the install folder to, or removes it from, the user's PATH with ..\path.ps1
+# (shared with `task install-windows`). PowerShell does the edit because NSIS strings
+# are capped at 1024 characters, which would truncate a long PATH. The script is
+# unpacked to the temporary plugins folder, so it isn't left in the install folder.
+!macro katdown.path MODE
+    InitPluginsDir
+    File /oname=$PLUGINSDIR\path.ps1 "..\path.ps1"
+    nsExec::ExecToLog '"powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\path.ps1" -Dir "$INSTDIR" -Mode ${MODE}'
+    Pop $0 # exit code: for check, 0 = already on PATH
+!macroend
+
 # The version information for this two must consist of 4 parts
 VIProductVersion "${INFO_PRODUCTVERSION}.0"
 VIFileVersion    "${INFO_PRODUCTVERSION}.0"
@@ -138,6 +149,14 @@ Section
 
     !insertmacro katdown.registerMarkdown
     !insertmacro wails.associateCustomProtocols
+
+    # Ask only if katdown isn't on PATH yet (e.g. not on a reinstall).
+    # Silent installs (/S) leave PATH alone.
+    !insertmacro katdown.path "check"
+    StrCmp $0 "0" katdown_skip_path
+    MessageBox MB_YESNO|MB_ICONQUESTION "Add katdown to your PATH?$\r$\n$\r$\nThis lets you run katdown from a terminal, e.g. katdown notes.md. Terminals that are already open need restarting to see it." /SD IDNO IDNO katdown_skip_path
+        !insertmacro katdown.path "add"
+    katdown_skip_path:
     
     !insertmacro wails.writeUninstaller
 SectionEnd
@@ -153,6 +172,7 @@ Section "uninstall"
     Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
 
     !insertmacro katdown.unregisterMarkdown
+    !insertmacro katdown.path "remove" # no-op if it was never added
     !insertmacro wails.unassociateCustomProtocols
 
     !insertmacro wails.deleteUninstaller
