@@ -8,7 +8,7 @@ import (
 
 func render(t *testing.T, src string) string {
 	t.Helper()
-	out, err := Render([]byte(src), nil, false)
+	out, err := Render([]byte(src), Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestRenderSanitizesRawHTML(t *testing.T) {
 }
 
 func TestRenderRawHTML(t *testing.T) {
-	out, err := Render([]byte("hi <kbd>Ctrl</kbd>\n\n<details><summary>more</summary>\n\nbody\n\n</details>\n"), nil, true)
+	out, err := Render([]byte("hi <kbd>Ctrl</kbd>\n\n<details><summary>more</summary>\n\nbody\n\n</details>\n"), Options{RawHTML: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +204,7 @@ func TestRenderHighlight(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out, err := Render([]byte(tt.src), braces, false)
+			out, err := Render([]byte(tt.src), Options{Highlights: braces})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -224,7 +224,7 @@ func TestRenderHighlight(t *testing.T) {
 
 func TestRenderHighlightOverlapping(t *testing.T) {
 	res := []*regexp.Regexp{regexp.MustCompile(`TODO`), regexp.MustCompile(`TODO:? \w+`)}
-	out, err := Render([]byte("x TODO: fix y"), res, false)
+	out, err := Render([]byte("x TODO: fix y"), Options{Highlights: res})
 	if err != nil {
 		t.Fatal(err)
 	}

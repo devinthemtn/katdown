@@ -188,7 +188,7 @@ func (a *App) GetDocument() Document {
 	dark, light := settings.CodeCSS()
 	doc := Document{
 		// The settings' variables come last so they apply to a custom style.css too.
-		CSS:       css + "\n" + settings.CSSVars(),
+		CSS:       css + "\n" + settings.CSSVars() + settings.CalloutCSS(),
 		CustomCSS: custom,
 		Theme:     settings.Theme,
 		TOC:       settings.TOC.Style,
@@ -213,7 +213,11 @@ func (a *App) GetDocument() Document {
 	if svx.IsSvx(p) {
 		src = svx.Prepare(src, p)
 	}
-	html, err := render.Render(src, settings.HighlightPatterns(), a.rawHTML || settings.HTML.Unsafe)
+	html, err := render.Render(src, render.Options{
+		Highlights: settings.HighlightPatterns(),
+		Callouts:   settings.CalloutTypes(),
+		RawHTML:    a.rawHTML || settings.HTML.Unsafe,
+	})
 	if err != nil {
 		doc.Error = err.Error()
 		return doc

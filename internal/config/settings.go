@@ -9,11 +9,14 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
+
+	"katdown/internal/render"
 )
 
 // SettingsFile is the name of the settings file inside Dir().
@@ -53,6 +56,16 @@ type Settings struct {
 	TOC struct {
 		Style string `toml:"style"` // "overlay" or "sidebar"
 	} `toml:"toc"`
+	// Callouts adds or restyles "> [!type]" blocks ([callouts.<type>]).
+	Callouts map[string]CalloutSettings `toml:"callouts"`
+}
+
+// CalloutSettings style one callout type. A new type needs a Color; empty
+// fields of a built-in type keep its defaults.
+type CalloutSettings struct {
+	Color string `toml:"color"` // CSS color
+	Icon  string `toml:"icon"`
+	Title string `toml:"title"`
 }
 
 type FontSettings struct {
@@ -68,8 +81,9 @@ const (
 )
 
 var (
-	cssLength = regexp.MustCompile(`^\d+(\.\d+)?(rem|em|px|ch|%)$`)
-	cssColor  = regexp.MustCompile(`^(#[0-9a-fA-F]{3,8}|[a-zA-Z]+|(rgb|rgba|hsl|hsla)\([0-9.,%/ ]+\))$`)
+	calloutName = regexp.MustCompile(`^[a-z0-9-]+$`)
+	cssLength   = regexp.MustCompile(`^\d+(\.\d+)?(rem|em|px|ch|%)$`)
+	cssColor    = regexp.MustCompile(`^(#[0-9a-fA-F]{3,8}|[a-zA-Z]+|(rgb|rgba|hsl|hsla)\([0-9.,%/ ]+\))$`)
 	// Font names end up inside a quoted CSS string.
 	badFontChars = `"';{}<>\`
 )
@@ -194,6 +208,29 @@ func (s *Settings) validate() []error {
 		bad("highlight.color", fmt.Sprintf("%q", c), `want a CSS color like "#e0af68" or "orange"`)
 		s.Highlight.Color = d.Highlight.Color
 	}
+	var callouts map[string]CalloutSettings
+	for raw, c := range s.Callouts {
+		name := strings.ToLower(strings.TrimSpace(raw))
+		key := "callouts." + raw
+		_, builtin := render.BuiltinCallouts[name]
+		switch {
+		case !calloutName.MatchString(name):
+			bad(key, fmt.Sprintf("%q", raw), "a type name may only use a-z, 0-9 and -")
+		case c.Color != "" && !cssColor.MatchString(c.Color):
+			bad(key+".color", fmt.Sprintf("%q", c.Color), `want a CSS color like "#e0af68" or "orange"`)
+		case c.Color == "" && !builtin:
+			bad(key+".color", `""`, "a new callout type needs a color")
+		default:
+			if callouts == nil {
+				callouts = map[string]CalloutSettings{}
+			}
+			callouts[name] = c
+		}
+	}
+	s.Callouts = callouts
+	if len(callouts) == 0 {
+		s.Callouts = nil
+	}
 	switch s.TOC.Style {
 	case "overlay", "sidebar":
 	default:
@@ -225,6 +262,66 @@ func (s Settings) CSSVars() string {
 		css += "}\n:root[data-theme] {\n  --highlight: " + s.Highlight.Color + ";\n"
 	}
 	return css + "}\n"
+}
+
+// CalloutTypes returns the callout types to render: the built-ins plus the
+// configured ones, with their icons and titles.
+func (s Settings) CalloutTypes() map[string]render.Callout {
+	custom := make(map[string]render.Callout, len(s.Callouts))
+	for k, c := range s.Callouts {
+		custom[k] = render.Callout{Icon: c.Icon, Title: c.Title}
+	}
+	return render.CalloutTypes(custom)
+}
+
+// calloutColors are the built-in types' colors (GitHub's) per theme.
+var calloutColors = []struct{ name, dark, light string }{
+	{"note", "#4493f8", "#0969da"},
+	{"tip", "#3fb950", "#1a7f37"},
+	{"important", "#ab7df8", "#8250df"},
+	{"warning", "#d29922", "#9a6700"},
+	{"caution", "#f85149", "#cf222e"},
+}
+
+// CalloutCSS styles the callout boxes and sets each type's --callout-color.
+// It comes after the stylesheet, so it works with a custom style.css too;
+// the box rules use :where() so any rule in style.css overrides them.
+func (s Settings) CalloutCSS() string {
+	var b strings.Builder
+	b.WriteString(`:where(.markdown-body .callout) {
+  --callout-color: var(--accent);
+  border-left: 4px solid var(--callout-color);
+  background: color-mix(in srgb, var(--callout-color) 9%, transparent);
+  border-radius: 0 6px 6px 0;
+  margin: 1em 0;
+  padding: 0.6em 1em;
+}
+:where(.markdown-body .callout > :first-child) { margin-top: 0; }
+:where(.markdown-body .callout > :last-child) { margin-bottom: 0; }
+:where(.markdown-body .callout-title) {
+  color: var(--callout-color);
+  font-weight: 600;
+  display: flex;
+  gap: 0.4em;
+  align-items: baseline;
+}
+`)
+	for _, c := range calloutColors {
+		fmt.Fprintf(&b, ":root .callout-%s { --callout-color: %s; }\n", c.name, c.dark)
+		fmt.Fprintf(&b, ":root[data-theme=\"light\"] .callout-%s { --callout-color: %s; }\n", c.name, c.light)
+	}
+	names := make([]string, 0, len(s.Callouts))
+	for k := range s.Callouts {
+		names = append(names, k)
+	}
+	sort.Strings(names)
+	for _, k := range names {
+		if c := s.Callouts[k].Color; c != "" {
+			// Beats the built-in rules above in both themes.
+			fmt.Fprintf(&b, ":root[data-theme] .callout-%s { --callout-color: %s; }\n", k, c)
+		}
+	}
+	return b.String()
 }
 
 // CodeCSS returns the syntax-highlighting CSS for the dark and light themes.

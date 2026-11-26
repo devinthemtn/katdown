@@ -199,6 +199,30 @@ forces a line break.
 
 ---
 
+## Callouts
+
+> [!NOTE]
+> Useful information that users should know, even when skimming.
+
+> [!TIP]
+> Helpful advice for doing things better or more easily.
+
+> [!IMPORTANT]
+> Key information users need to know to achieve their goal.
+
+> [!WARNING]
+> Urgent info that needs immediate user attention to avoid problems.
+
+> [!CAUTION] Careful with this one
+> A custom title, and **formatting** inside:
+>
+> - a list
+> - and `code`
+
+Add your own types with `[callouts.<type>]` in `config.toml`.
+
+---
+
 ## Lists
 
 1. Ordered item

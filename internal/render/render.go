@@ -28,6 +28,7 @@ func newMarkdown() goldmark.Markdown {
 			extension.GFM,
 			extension.Footnote,
 			math{},
+			callout{},
 			highlight{},
 			// Mermaid's transformer claims ```mermaid fences before highlighting
 			// sees them; the frontend draws the diagrams, which ship with the app.
@@ -62,23 +63,40 @@ func newPolicy() *bluemonday.Policy {
 	return p
 }
 
+// Options control one Render call.
+type Options struct {
+	// Text matching any of these is wrapped in <span class="katdown-highlight">.
+	Highlights []*regexp.Regexp
+	// Callouts are the "> [!type]" types to draw as callouts, usually
+	// CalloutTypes(config). Nil means BuiltinCallouts.
+	Callouts map[string]Callout
+	// RawHTML skips sanitizing.
+	RawHTML bool
+}
+
 // Render returns src rendered as an HTML fragment. Text matching any of the
-// highlight patterns is wrapped in <span class="katdown-highlight">. Unless
-// rawHTML is set, the output is sanitized: safe raw HTML such as <details> or
-// <kbd> is kept, while scripts, styles, event handlers and javascript: URLs
-// are removed. YAML front matter is shown as a collapsed table.
-func Render(src []byte, highlights []*regexp.Regexp, rawHTML bool) (string, error) {
+// highlight patterns is wrapped in <span class="katdown-highlight">, and
+// blockquotes starting with a known [!type] become callouts. Unless RawHTML
+// is set, the output is sanitized: safe raw HTML such as <details> or <kbd>
+// is kept, while scripts, styles, event handlers and javascript: URLs are
+// removed. YAML front matter is shown as a collapsed table.
+func Render(src []byte, opts Options) (string, error) {
 	var buf bytes.Buffer
 	if front, rest, ok := splitFrontMatter(src); ok {
 		buf.WriteString(frontMatterHTML(front))
 		src = rest
 	}
+	callouts := opts.Callouts
+	if callouts == nil {
+		callouts = BuiltinCallouts
+	}
 	pc := parser.NewContext()
-	pc.Set(highlightKey, highlights)
+	pc.Set(highlightKey, opts.Highlights)
+	pc.Set(calloutKey, callouts)
 	if err := md.Convert(src, &buf, parser.WithContext(pc)); err != nil {
 		return "", err
 	}
-	if rawHTML {
+	if opts.RawHTML {
 		return buf.String(), nil
 	}
 	return policy.SanitizeReader(&buf).String(), nil

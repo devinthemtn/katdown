@@ -130,6 +130,30 @@ style = "overlay"              # or "sidebar": a panel on the left that stays op
 
 By default, anything in `{curly braces}` is highlighted, which suits templates and placeholders. Add patterns to mark other words, e.g. `patterns = ['\{[^{}]+\}', '\bTODO\b']`, using single quotes so backslashes are kept. Code, math and URLs are never highlighted, and `\{x}` skips one occurrence.
 
+### Callouts
+
+A blockquote whose first line is `[!type]` becomes a coloured box with an icon and title, like GitHub's alerts. The five GitHub types work out of the box: `NOTE` (blue), `TIP` (green), `IMPORTANT` (purple), `WARNING` (amber) and `CAUTION` (red). The type is case-insensitive, and text after the marker replaces the title:
+
+```markdown
+> [!WARNING]
+> Back up the database first.
+
+> [!idea] Something to try
+> Body text, lists, code… all work in here.
+```
+
+Add your own types, or restyle the built-in ones, with `[callouts.<type>]` tables. A new type needs a `color` (any CSS colour). `icon` and `title` are optional; the title defaults to the type name, capitalized. An unknown type stays a plain quote, as on GitHub. [katnotes](https://github.com/devinthemtn/katnotes) reads the same tables from its own config.
+
+```toml
+[callouts.idea]
+color = "#e0af68"
+icon = "🧠"
+title = "Idea"
+
+[callouts.warning]   # override a built-in
+color = "orange"
+```
+
 `e` opens the file in `editor.command` if set, otherwise `$VISUAL`, otherwise the system default (`xdg-open` on Linux, Notepad on Windows and under WSL without `xdg-open`). `$EDITOR` is not used: it is normally a terminal editor, and katdown has no terminal to run it in.
 
 ## Styling
@@ -138,7 +162,7 @@ The default look uses the bundled Inter and JetBrains Mono fonts, with a dark an
 
 If `style.css` exists in the config folder, it **replaces** the built-in style. Run `-makestyle` to get a full copy of the default to edit; delete the file to go back to the default. The palette is a set of CSS variables at the top of the file (Mermaid diagrams use them too), with the light palette under `:root[data-theme="light"]`. The settings still apply on top of a custom `style.css`: they set `data-theme` on `<html>`, the `--font-body`, `--font-mono`, `--font-size` and `--content-width` variables, and the code colors (which a `style.css` can override).
 
-Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-command` (the `:` window; `li.selected`, `.msg.error`), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents; `#katdown-toc.sidebar` with `style = "sidebar"`, which pads `body.katdown-toc-sidebar` by `--toc-width`, default `18rem`), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words), `.katdown-frontmatter` (the front matter; `display: none` hides it).
+Useful selectors: `.markdown-body` (the document), `pre.chroma` (code; token classes come from [chroma](https://github.com/alecthomas/chroma)), `pre.mermaid`, `mark.katdown-match` / `mark.katdown-match.current` (search hits), `#katdown-cmdline` (the search bar), `#katdown-command` (the `:` window; `li.selected`, `.msg.error`), `#katdown-help` (the `?` overlay), `#katdown-toc` (the `t` contents; `#katdown-toc.sidebar` with `style = "sidebar"`, which pads `body.katdown-toc-sidebar` by `--toc-width`, default `18rem`), `.math` / `.katex` (formulas), `.katdown-highlight` (highlighted words), `.callout` / `.callout-<type>` / `.callout-title` / `.callout-icon` (callouts; set `--callout-color` to recolour one), `.katdown-frontmatter` (the front matter; `display: none` hides it).
 
 ## Keys
 

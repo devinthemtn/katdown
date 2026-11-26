@@ -58,3 +58,9 @@ unsafe = false
 # window that closes after you jump; "sidebar" is a panel on the left that
 # stays open while you read and marks the section you're in.
 style = "overlay"
+
+# Callouts: "> [!type]" blocks. NOTE, TIP, IMPORTANT, WARNING and CAUTION are
+# built in. Add a [callouts.<type>] table to restyle one or add a new type:
+# a new type needs a CSS color; icon and title are optional. For example, a
+# [callouts.idea] table with color "#e0af68", icon "🧠" and title "Idea" makes
+# "> [!idea]" a yellow box titled 🧠 Idea.

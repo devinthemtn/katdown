@@ -4,6 +4,7 @@
 
 ### Added
 
+- Callouts: a blockquote starting with `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]` or `[!CAUTION]` shows as a coloured box with an icon and title, like on GitHub. Text after the marker sets the title. Add your own types, or restyle these, with `[callouts.<type>]` in `config.toml` (`color`, `icon`, `title`).
 - The Windows installer asks whether to add katdown to your `PATH`, so you can run `katdown notes.md` from a terminal. Uninstalling removes it again. Silent installs (`/S`) leave `PATH` alone.
 - `task install-windows` (and `task install` in WSL) also checks whether katdown is on the Windows `PATH` and asks to add it. Answer up front with `WIN_PATH=true` or `WIN_PATH=false`.
 

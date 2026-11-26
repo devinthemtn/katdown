@@ -192,3 +192,39 @@ func TestParseSettingsTOCStyle(t *testing.T) {
 		t.Errorf("bad toc.style kept %q; want the default", s.TOC.Style)
 	}
 }
+
+func TestCalloutSettings(t *testing.T) {
+	s, err := ParseSettings(`
+[callouts.Idea]
+color = "#e0af68"
+icon = "🧠"
+
+[callouts.note]
+color = "orange"
+
+[callouts.nocolor]
+icon = "x"
+
+[callouts.bad]
+color = "red; x"
+`)
+	if err == nil || !strings.Contains(err.Error(), "nocolor") || !strings.Contains(err.Error(), "callouts.bad.color") {
+		t.Errorf("err = %v", err)
+	}
+	if len(s.Callouts) != 2 || s.Callouts["idea"].Color != "#e0af68" {
+		t.Errorf("callouts = %+v", s.Callouts)
+	}
+	css := s.CalloutCSS()
+	for _, want := range []string{
+		":root[data-theme] .callout-idea { --callout-color: #e0af68; }",
+		":root[data-theme] .callout-note { --callout-color: orange; }",
+		`:root[data-theme="light"] .callout-tip { --callout-color: #1a7f37; }`,
+	} {
+		if !strings.Contains(css, want) {
+			t.Errorf("CSS missing %q:\n%s", want, css)
+		}
+	}
+	if s.CalloutTypes()["idea"].Icon != "🧠" || s.CalloutTypes()["warning"].Title != "Warning" {
+		t.Errorf("types = %+v", s.CalloutTypes())
+	}
+}
